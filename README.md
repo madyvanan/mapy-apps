@@ -1,3 +1,4 @@
+
 # mapy-apps
 
 A monorepo that hosts multiple **independent** applications, each with its own tech stack, its own dependencies, and its own deployment pipeline. Grouping them here is purely organizational — under `https://www.mapyapps.com` and its subdomains — not architectural. No code, config, or dependency is ever shared between apps.
