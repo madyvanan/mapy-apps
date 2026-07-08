@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magizhthunnu - System Design Document</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --primary: #E85D04;
+    --primary-dark: #C44D02;
+    --primary-light: #FFF3E8;
+    --secondary: #1A1A2E;
+    --accent: #16213E;
+    --success: #0F9B58;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --info: #3B82F6;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --text: #1F2937;
+    --border: #E5E7EB;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; color:var(--text); background:#fff; font-size:14px; line-height:1.6; }
+
+  /* ── COVER PAGE ── */
+  .cover {
+    min-height:100vh; background:linear-gradient(135deg,#1A1A2E 0%,#16213E 40%,#0F3460 100%);
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; padding:60px 40px; page-break-after:always;
+    position:relative; overflow:hidden;
+  }
+  .cover::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background:radial-gradient(circle at 30% 70%, rgba(232,93,4,0.15) 0%, transparent 50%),
+               radial-gradient(circle at 70% 30%, rgba(59,130,246,0.1) 0%, transparent 50%);
+  }
+  .cover-badge {
+    background:rgba(232,93,4,0.2); border:1px solid rgba(232,93,4,0.4);
+    color:#FF8C42; padding:6px 20px; border-radius:20px; font-size:12px;
+    font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-bottom:24px;
+  }
+  .cover h1 { font-size:72px; font-weight:800; color:#fff; letter-spacing:-2px; line-height:1; margin-bottom:12px; }
+  .cover h1 span { color:var(--primary); }
+  .cover-tagline { font-size:20px; color:rgba(255,255,255,0.7); margin-bottom:48px; font-weight:300; }
+  .cover-divider { width:60px; height:3px; background:var(--primary); margin:0 auto 48px; border-radius:2px; }
+  .cover-meta { display:flex; gap:40px; justify-content:center; flex-wrap:wrap; }
+  .cover-meta-item { text-align:center; }
+  .cover-meta-item .label { font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .cover-meta-item .value { font-size:15px; color:rgba(255,255,255,0.9); font-weight:500; }
+  .cover-stack { margin-top:60px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .stack-chip {
+    background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+    color:rgba(255,255,255,0.75); padding:5px 14px; border-radius:6px; font-size:12px; font-weight:500;
+  }
+
+  /* ── LAYOUT ── */
+  .page { max-width:1100px; margin:0 auto; padding:60px 48px; }
+  .page-break { page-break-before:always; }
+
+  /* ── SECTION HEADERS ── */
+  .section-header { margin-bottom:40px; }
+  .section-number { font-size:11px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+  .section-title { font-size:32px; font-weight:800; color:var(--gray-900); letter-spacing:-0.5px; line-height:1.2; }
+  .section-subtitle { font-size:15px; color:var(--gray-600); margin-top:8px; }
+  .section-divider { width:40px; height:3px; background:var(--primary); border-radius:2px; margin-top:16px; }
+
+  h2.section { font-size:22px; font-weight:700; color:var(--gray-900); margin:40px 0 16px; padding-bottom:10px; border-bottom:2px solid var(--border); }
+  h3.sub { font-size:16px; font-weight:600; color:var(--gray-800); margin:28px 0 12px; }
+  h4.subsub { font-size:14px; font-weight:600; color:var(--primary); margin:20px 0 8px; }
+
+  p { margin-bottom:12px; color:var(--gray-700); }
+
+  /* ── TABLES ── */
+  .table-wrap { overflow-x:auto; margin:20px 0; border-radius:10px; border:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead tr { background:var(--gray-900); }
+  thead th { padding:12px 16px; text-align:left; color:#fff; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
+  tbody tr { border-bottom:1px solid var(--gray-100); transition:background 0.15s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:var(--gray-50); }
+  tbody td { padding:11px 16px; color:var(--gray-700); vertical-align:top; }
+  tbody td:first-child { font-weight:500; color:var(--gray-900); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .badge-green { background:#D1FAE5; color:#065F46; }
+  .badge-blue { background:#DBEAFE; color:#1E40AF; }
+  .badge-orange { background:#FEF3C7; color:#92400E; }
+  .badge-purple { background:#EDE9FE; color:#5B21B6; }
+  .badge-red { background:#FEE2E2; color:#991B1B; }
+
+  /* ── CODE BLOCKS ── */
+  pre { background:var(--gray-900); color:#E2E8F0; padding:20px 24px; border-radius:10px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.7; margin:16px 0; }
+  pre .comment { color:#64748B; }
+  pre .key { color:#93C5FD; }
+  pre .string { color:#86EFAC; }
+  pre .type { color:#FCA5A5; }
+  code { font-family:'JetBrains Mono',monospace; background:var(--gray-100); padding:2px 6px; border-radius:4px; font-size:12px; color:var(--primary-dark); }
+
+  /* ── CARDS ── */
+  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:24px; margin:16px 0; }
+  .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:20px 0; }
+  .card-title { font-size:14px; font-weight:700; color:var(--gray-900); margin-bottom:8px; }
+  .card-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px; }
+
+  /* ── INFO BOXES ── */
+  .info-box { display:flex; gap:14px; padding:16px 20px; border-radius:10px; margin:16px 0; }
+  .info-box.decision { background:#FFF3E8; border-left:4px solid var(--primary); }
+  .info-box.note { background:#EFF6FF; border-left:4px solid var(--info); }
+  .info-box.warning { background:#FFFBEB; border-left:4px solid var(--warning); }
+  .info-box.success { background:#F0FDF4; border-left:4px solid var(--success); }
+  .info-box-icon { font-size:20px; flex-shrink:0; }
+  .info-box-title { font-weight:700; font-size:13px; margin-bottom:4px; }
+  .info-box.decision .info-box-title { color:var(--primary-dark); }
+  .info-box.note .info-box-title { color:var(--info); }
+
+  /* ── DIAGRAM CONTAINERS ── */
+  .diagram-box { background:var(--gray-50); border:1px solid var(--border); border-radius:12px; padding:32px; margin:24px 0; overflow-x:auto; }
+  .diagram-title { font-size:13px; font-weight:600; color:var(--gray-600); text-align:center; margin-bottom:20px; text-transform:uppercase; letter-spacing:1px; }
+  .mermaid { display:flex; justify-content:center; }
+
+  /* ── ASCII DIAGRAM ── */
+  .ascii-diagram { background:var(--gray-900); color:#A5F3FC; font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.5; padding:28px 32px; border-radius:12px; margin:20px 0; overflow-x:auto; white-space:pre; }
+
+  /* ── LISTS ── */
+  ul.styled, ol.styled { padding-left:20px; margin:12px 0; }
+  ul.styled li, ol.styled li { margin-bottom:8px; color:var(--gray-700); }
+  ul.styled li::marker { color:var(--primary); }
+
+  /* ── ENDPOINT TABLE ── */
+  .method { display:inline-block; padding:2px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; }
+  .method-get { background:#D1FAE5; color:#065F46; }
+  .method-post { background:#DBEAFE; color:#1E40AF; }
+  .method-put { background:#FEF3C7; color:#92400E; }
+  .method-patch { background:#E9D5FF; color:#6B21A8; }
+  .method-delete { background:#FEE2E2; color:#991B1B; }
+
+  /* ── FLOW STEPS ── */
+  .flow-steps { display:flex; flex-direction:column; gap:0; margin:20px 0; }
+  .flow-step { display:flex; gap:16px; align-items:flex-start; }
+  .flow-step-num { width:32px; height:32px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+  .flow-step-content { padding-bottom:20px; border-left:2px solid var(--border); padding-left:16px; flex:1; }
+  .flow-step:last-child .flow-step-content { border-left:none; }
+  .flow-step-title { font-weight:600; color:var(--gray-900); margin-bottom:4px; }
+  .flow-step-desc { font-size:13px; color:var(--gray-600); }
+
+  /* ── ROLE MATRIX ── */
+  .check { color:var(--success); font-size:16px; }
+  .cross { color:var(--danger); font-size:16px; }
+
+  /* ── FOLDER TREE ── */
+  .tree { font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.8; background:var(--gray-900); color:#E2E8F0; padding:24px 28px; border-radius:12px; margin:16px 0; }
+  .tree .dir { color:#93C5FD; font-weight:600; }
+  .tree .file { color:#A7F3D0; }
+  .tree .comment { color:#64748B; font-style:italic; }
+
+  /* ── TOC ── */
+  .toc { background:var(--gray-50); border:1px solid var(--border); border-radius:12px; padding:32px 40px; margin:40px 0; }
+  .toc h2 { font-size:18px; font-weight:700; margin-bottom:20px; color:var(--gray-900); }
+  .toc-list { display:grid; grid-template-columns:1fr 1fr; gap:4px 40px; }
+  .toc-item { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px dotted var(--gray-200); }
+  .toc-num { font-size:12px; font-weight:700; color:var(--primary); width:24px; flex-shrink:0; }
+  .toc-text { font-size:13px; color:var(--gray-700); }
+
+  /* ── PRINT ── */
+  @media print {
+    .cover { min-height:100vh; }
+    .page-break { page-break-before:always; }
+    body { font-size:12px; }
+    .diagram-box { page-break-inside:avoid; }
+    table { page-break-inside:avoid; }
+  }
+  @page { margin:0.75in; size:A4; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">System Design Document</div>
+  <h1>Magizh<span>thunnu</span></h1>
+  <p class="cover-tagline">Complete Architecture & Engineering Blueprint<br>for a Full-Stack Online Food Delivery Platform</p>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">Version</div><div class="value">1.0.0</div></div>
+    <div class="cover-meta-item"><div class="label">Date</div><div class="value">March 2026</div></div>
+    <div class="cover-meta-item"><div class="label">Role</div><div class="value">Senior Full Stack Architect</div></div>
+    <div class="cover-meta-item"><div class="label">Stack</div><div class="value">MERN (MongoDB)</div></div>
+    <div class="cover-meta-item"><div class="label">Status</div><div class="value">Greenfield</div></div>
+  </div>
+  <div class="cover-stack">
+    <span class="stack-chip">React 18</span><span class="stack-chip">TypeScript 5.3</span>
+    <span class="stack-chip">Node.js 22</span><span class="stack-chip">Express.js</span>
+    <span class="stack-chip">MongoDB Atlas</span><span class="stack-chip">Mongoose 8</span>
+    <span class="stack-chip">Redis</span><span class="stack-chip">BullMQ</span>
+    <span class="stack-chip">Paytm Gateway</span><span class="stack-chip">Socket.IO</span>
+    <span class="stack-chip">Docker</span><span class="stack-chip">GitHub Actions</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TABLE OF CONTENTS
+══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="toc">
+    <h2>Table of Contents</h2>
+    <div class="toc-list">
+      <div class="toc-item"><span class="toc-num">1</span><span class="toc-text">Executive Summary</span></div>
+      <div class="toc-item"><span class="toc-num">2</span><span class="toc-text">High-Level Architecture (HLD)</span></div>
+      <div class="toc-item"><span class="toc-num">3</span><span class="toc-text">Technology Stack Decisions</span></div>
+      <div class="toc-item"><span class="toc-num">4</span><span class="toc-text">Frontend Architecture</span></div>
+      <div class="toc-item"><span class="toc-num">5</span><span class="toc-text">Backend Architecture</span></div>
+      <div class="toc-item"><span class="toc-num">6</span><span class="toc-text">Database Design (LLD)</span></div>
+      <div class="toc-item"><span class="toc-num">7</span><span class="toc-text">REST API Design</span></div>
+      <div class="toc-item"><span class="toc-num">8</span><span class="toc-text">Authentication &amp; RBAC</span></div>
+      <div class="toc-item"><span class="toc-num">9</span><span class="toc-text">Payment Architecture (Paytm)</span></div>
+      <div class="toc-item"><span class="toc-num">10</span><span class="toc-text">Real-Time Order Tracking</span></div>
+      <div class="toc-item"><span class="toc-num">11</span><span class="toc-text">Security Architecture</span></div>
+      <div class="toc-item"><span class="toc-num">12</span><span class="toc-text">Deployment Architecture</span></div>
+      <div class="toc-item"><span class="toc-num">13</span><span class="toc-text">Scalability Design</span></div>
+      <div class="toc-item"><span class="toc-num">14</span><span class="toc-text">Testing Strategy</span></div>
+      <div class="toc-item"><span class="toc-num">15</span><span class="toc-text">Complete Folder Structure</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 1 — EXECUTIVE SUMMARY
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 01</div>
+    <div class="section-title">Executive Summary</div>
+    <div class="section-subtitle">Business context, goals, and stakeholders</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <p><strong>Magizhthunnu</strong> (meaning "delightful" in Tamil) is a full-stack online food delivery platform connecting customers with local restaurants. Built on the MERN stack with TypeScript, it enables customers to browse restaurants, place orders, and pay digitally — while giving restaurants a management dashboard and admins a control plane.</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background:#FEF3C7;">🎯</div>
+      <div class="card-title">Business Goals</div>
+      <ul class="styled">
+        <li>Connect customers &amp; local restaurants</li>
+        <li>Frictionless digital ordering experience</li>
+        <li>Integrated Paytm payment processing</li>
+        <li>Real-time order tracking</li>
+        <li>Admin &amp; restaurant management dashboards</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#DBEAFE;">👥</div>
+      <div class="card-title">User Roles</div>
+      <ul class="styled">
+        <li><strong>Customer</strong> — Browse, order, track, review</li>
+        <li><strong>Restaurant Owner</strong> — Manage menu, orders, hours</li>
+        <li><strong>Admin</strong> — Platform oversight, analytics</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#D1FAE5;">📦</div>
+      <div class="card-title">Core Features</div>
+      <ul class="styled">
+        <li>Restaurant discovery (geolocation)</li>
+        <li>Dynamic menu with customizations</li>
+        <li>Shopping cart with TTL auto-clear</li>
+        <li>Multi-step checkout &amp; Paytm payments</li>
+        <li>Live order status (Socket.IO)</li>
+        <li>Ratings &amp; reviews system</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#EDE9FE;">⚡</div>
+      <div class="card-title">Non-Functional Requirements</div>
+      <ul class="styled">
+        <li>Response time &lt; 200ms (cached)</li>
+        <li>99.9% uptime SLA</li>
+        <li>HTTPS + JWT security</li>
+        <li>Horizontal scalability</li>
+        <li>80%+ test coverage</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 2 — HIGH-LEVEL ARCHITECTURE
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 02</div>
+    <div class="section-title">High-Level Architecture</div>
+    <div class="section-subtitle">3-tier system architecture and component interactions</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">System Architecture Overview</div>
+    <div class="mermaid">
+graph TB
+    subgraph CLIENT["CLIENT TIER"]
+        A[React SPA<br/>Vite + TypeScript]
+        B[Mobile Browser]
+    end
+    subgraph CDN["CDN / EDGE"]
+        C[Vercel Edge<br/>Static Assets]
+        D[Cloudflare CDN<br/>Images]
+    end
+    subgraph GATEWAY["API GATEWAY / PROXY"]
+        E[Nginx<br/>Reverse Proxy + SSL]
+    end
+    subgraph BACKEND["APPLICATION TIER"]
+        F[Express.js API<br/>Node.js 22]
+        G[Socket.IO Server<br/>Real-time Events]
+    end
+    subgraph DATA["DATA TIER"]
+        H[(MongoDB Atlas<br/>Primary DB)]
+        I[(Redis<br/>Cache + Pub/Sub)]
+        J[BullMQ<br/>Job Queues]
+    end
+    subgraph EXTERNAL["EXTERNAL SERVICES"]
+        K[Paytm Gateway<br/>Payments]
+        L[Cloudinary<br/>Image Storage]
+        M[SMTP / SendGrid<br/>Email]
+    end
+    A --> C
+    A --> E
+    B --> E
+    E --> F
+    E --> G
+    F --> H
+    F --> I
+    F --> J
+    J --> M
+    F --> K
+    F --> L
+    G --> I
+    style CLIENT fill:#1A1A2E,color:#fff
+    style CDN fill:#0F3460,color:#fff
+    style GATEWAY fill:#533483,color:#fff
+    style BACKEND fill:#E85D04,color:#fff
+    style DATA fill:#065F46,color:#fff
+    style EXTERNAL fill:#1E40AF,color:#fff
+    </div>
+  </div>
+
+  <h2 class="section">Component Responsibilities</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>Technology</th><th>Responsibility</th><th>Host</th></tr></thead>
+      <tbody>
+        <tr><td>React SPA</td><td>React 18 + Vite</td><td>UI rendering, routing, state management</td><td>Vercel</td></tr>
+        <tr><td>Nginx</td><td>Nginx 1.25</td><td>SSL termination, reverse proxy, rate limiting</td><td>AWS EC2 / Render</td></tr>
+        <tr><td>Express API</td><td>Node.js 22 + Express</td><td>Business logic, REST endpoints, auth</td><td>Render / Railway</td></tr>
+        <tr><td>Socket.IO</td><td>Socket.IO 4.x</td><td>Real-time order status push</td><td>Same as API</td></tr>
+        <tr><td>MongoDB Atlas</td><td>MongoDB 7.x</td><td>Persistent data store (all collections)</td><td>MongoDB Atlas</td></tr>
+        <tr><td>Redis</td><td>Redis 7.x</td><td>Caching, session store, Pub/Sub</td><td>Redis Cloud / Upstash</td></tr>
+        <tr><td>BullMQ</td><td>BullMQ + Redis</td><td>Async jobs: emails, notifications, reports</td><td>Same as API</td></tr>
+        <tr><td>Cloudinary</td><td>Cloudinary SDK</td><td>Restaurant/menu image storage + CDN</td><td>Cloudinary Cloud</td></tr>
+        <tr><td>Paytm Gateway</td><td>Paytm Node SDK</td><td>Payment initiation, checksum, webhook</td><td>Paytm Cloud</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 3 — TECH STACK
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 03</div>
+    <div class="section-title">Technology Stack</div>
+    <div class="section-subtitle">Full decision table with version and rationale</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="info-box decision">
+    <div class="info-box-icon">🏛️</div>
+    <div>
+      <div class="info-box-title">Database Decision: MongoDB over PostgreSQL</div>
+      Menu items vary wildly across restaurants (flexible schema). Nested documents map naturally to cart items, order line items, and embedded delivery addresses. JSON-native eliminates impedance mismatch with Node.js/TypeScript. Built-in TTL indexes handle cart expiry. Horizontal sharding for future scale. PostgreSQL would win for strict financial auditing — MongoDB wins here for agility.
+    </div>
+  </div>
+
+  <h2 class="section">Frontend Stack</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th><th>Version</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>UI Framework</td><td>React</td><td>18.3</td><td>Component model, concurrent features, wide ecosystem</td></tr>
+        <tr><td>Build Tool</td><td>Vite</td><td>5.x</td><td>Sub-second HMR, optimized production bundles</td></tr>
+        <tr><td>Language</td><td>TypeScript</td><td>5.3</td><td>Strict type safety, better DX, catches bugs at compile time</td></tr>
+        <tr><td>Styling</td><td>Tailwind CSS</td><td>3.x</td><td>Utility-first, no CSS file bloat, consistent design system</td></tr>
+        <tr><td>Routing</td><td>React Router</td><td>6.x</td><td>File-based routing with data loaders</td></tr>
+        <tr><td>HTTP Client</td><td>Axios</td><td>1.x</td><td>Request/response interceptors for auth tokens</td></tr>
+        <tr><td>State</td><td>Context API + useReducer</td><td>Built-in</td><td>Sufficient for Auth + Cart; avoids Redux overhead</td></tr>
+        <tr><td>Forms</td><td>React Hook Form + Zod</td><td>7.x / 3.x</td><td>Performant, schema-validated forms</td></tr>
+        <tr><td>Testing</td><td>Vitest + RTL + MSW</td><td>1.x</td><td>Fast, Vite-native test runner with API mocking</td></tr>
+        <tr><td>Linting</td><td>ESLint + Prettier</td><td>8.x / 3.x</td><td>Code consistency enforced via Husky pre-commit</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Backend Stack</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th><th>Version</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Runtime</td><td>Node.js</td><td>22 LTS</td><td>Async I/O, large npm ecosystem, matches TypeScript</td></tr>
+        <tr><td>Framework</td><td>Express.js</td><td>4.x</td><td>Minimal, flexible, production-proven REST framework</td></tr>
+        <tr><td>Language</td><td>TypeScript</td><td>5.3</td><td>Strict mode, no any types, shared types with frontend</td></tr>
+        <tr><td>ORM</td><td>Mongoose</td><td>8.x</td><td>Schema enforcement, middleware hooks, population</td></tr>
+        <tr><td>Validation</td><td>Zod</td><td>3.x</td><td>TypeScript-first, co-locate schema with route</td></tr>
+        <tr><td>Auth</td><td>JWT + bcrypt</td><td>—</td><td>Stateless tokens, HTTP-only cookie delivery</td></tr>
+        <tr><td>Real-time</td><td>Socket.IO</td><td>4.x</td><td>WebSocket with graceful fallback, room-based events</td></tr>
+        <tr><td>Queues</td><td>BullMQ</td><td>5.x</td><td>Redis-backed, retry logic, job scheduling</td></tr>
+        <tr><td>Caching</td><td>ioredis</td><td>5.x</td><td>Redis client with cluster/sentinel support</td></tr>
+        <tr><td>Logging</td><td>Winston + Morgan</td><td>3.x</td><td>Structured logs, request logging</td></tr>
+        <tr><td>Security</td><td>Helmet + express-rate-limit</td><td>7.x</td><td>HTTP headers, DoS protection</td></tr>
+        <tr><td>Testing</td><td>Jest + Supertest</td><td>29.x / 6.x</td><td>API integration tests, coverage reports</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Infrastructure Stack</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Database</td><td>MongoDB Atlas M10+</td><td>Managed, auto-scale, backups, Atlas Search</td></tr>
+        <tr><td>Cache</td><td>Redis Cloud / Upstash</td><td>Managed Redis, serverless-friendly</td></tr>
+        <tr><td>Image CDN</td><td>Cloudinary</td><td>Transform on-the-fly, free tier, CDN delivery</td></tr>
+        <tr><td>Frontend Host</td><td>Vercel</td><td>Edge network, preview deployments, zero config</td></tr>
+        <tr><td>Backend Host</td><td>Render / Railway</td><td>Docker-based PaaS, auto-deploy from GitHub</td></tr>
+        <tr><td>Proxy</td><td>Nginx</td><td>SSL termination, gzip, load balancing</td></tr>
+        <tr><td>Containers</td><td>Docker + Compose</td><td>Dev/prod parity, local stack orchestration</td></tr>
+        <tr><td>CI/CD</td><td>GitHub Actions</td><td>Automated lint → test → build → deploy pipeline</td></tr>
+        <tr><td>Payments</td><td>Paytm Payment Gateway</td><td>Project requirement, UPI + card support</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 4 — FRONTEND ARCHITECTURE
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 04</div>
+    <div class="section-title">Frontend Architecture</div>
+    <div class="section-subtitle">Component hierarchy, routing, state, and services</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Frontend Component Hierarchy</div>
+    <div class="mermaid">
+graph TD
+    A[main.tsx] --> B[App.tsx]
+    B --> C[AuthProvider]
+    C --> D[CartProvider]
+    D --> E[BrowserRouter]
+    E --> F{Route Guards}
+    F --> G[Public Routes]
+    F --> H[Customer Routes]
+    F --> I[Restaurant Routes]
+    F --> J[Admin Routes]
+    G --> G1[HomePage]
+    G --> G2[LoginPage]
+    G --> G3[RegisterPage]
+    G --> G4[RestaurantListPage]
+    G --> G5[RestaurantDetailPage]
+    H --> H1[CartPage]
+    H --> H2[CheckoutPage]
+    H --> H3[OrderTrackingPage]
+    H --> H4[OrderHistoryPage]
+    H --> H5[ProfilePage]
+    I --> I1[RestaurantDashboard]
+    I --> I2[MenuManagement]
+    I --> I3[OrderManagement]
+    J --> J1[AdminDashboard]
+    J --> J2[UserManagement]
+    J --> J3[AnalyticsPage]
+    style A fill:#E85D04,color:#fff
+    style B fill:#E85D04,color:#fff
+    style F fill:#1A1A2E,color:#fff
+    </div>
+  </div>
+
+  <h2 class="section">Application Pages</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Page</th><th>Route</th><th>Access</th><th>Key Features</th></tr></thead>
+      <tbody>
+        <tr><td>HomePage</td><td>/</td><td><span class="badge badge-green">Public</span></td><td>Hero, featured restaurants, search, cuisine filter</td></tr>
+        <tr><td>RestaurantListPage</td><td>/restaurants</td><td><span class="badge badge-green">Public</span></td><td>Filter by cuisine/rating/distance, map view</td></tr>
+        <tr><td>RestaurantDetailPage</td><td>/restaurants/:id</td><td><span class="badge badge-green">Public</span></td><td>Menu categories, add to cart, restaurant info</td></tr>
+        <tr><td>LoginPage</td><td>/auth/login</td><td><span class="badge badge-green">Public</span></td><td>Email+password, redirect post-login</td></tr>
+        <tr><td>RegisterPage</td><td>/auth/register</td><td><span class="badge badge-green">Public</span></td><td>Role selection, Zod validation</td></tr>
+        <tr><td>CartPage</td><td>/cart</td><td><span class="badge badge-blue">Customer</span></td><td>Edit quantities, remove items, proceed to checkout</td></tr>
+        <tr><td>CheckoutPage</td><td>/checkout</td><td><span class="badge badge-blue">Customer</span></td><td>Address selection, order summary, Paytm pay</td></tr>
+        <tr><td>OrderTrackingPage</td><td>/orders/:id/track</td><td><span class="badge badge-blue">Customer</span></td><td>Live status updates via Socket.IO</td></tr>
+        <tr><td>OrderHistoryPage</td><td>/orders</td><td><span class="badge badge-blue">Customer</span></td><td>Past orders, reorder, review</td></tr>
+        <tr><td>ProfilePage</td><td>/profile</td><td><span class="badge badge-blue">Customer</span></td><td>Edit profile, manage addresses</td></tr>
+        <tr><td>RestaurantDashboard</td><td>/dashboard</td><td><span class="badge badge-orange">Owner</span></td><td>Today's orders, revenue, status toggle</td></tr>
+        <tr><td>MenuManagement</td><td>/dashboard/menu</td><td><span class="badge badge-orange">Owner</span></td><td>CRUD menu items, upload images</td></tr>
+        <tr><td>AdminDashboard</td><td>/admin</td><td><span class="badge badge-red">Admin</span></td><td>Platform analytics, user/restaurant management</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">State Management</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">AuthContext</div>
+      <pre><span class="comment">// src/context/AuthContext.tsx</span>
+<span class="key">interface</span> <span class="type">AuthState</span> {
+  user: <span class="type">User</span> | <span class="key">null</span>;
+  isLoading: <span class="key">boolean</span>;
+  isAuthenticated: <span class="key">boolean</span>;
+}
+<span class="comment">// Actions: LOGIN, LOGOUT, UPDATE_PROFILE</span></pre>
+    </div>
+    <div class="card">
+      <div class="card-title">CartContext</div>
+      <pre><span class="comment">// src/context/CartContext.tsx</span>
+<span class="key">interface</span> <span class="type">CartState</span> {
+  items: <span class="type">CartItem</span>[];
+  restaurantId: <span class="key">string</span> | <span class="key">null</span>;
+  totalAmount: <span class="key">number</span>;
+  itemCount: <span class="key">number</span>;
+}
+<span class="comment">// Actions: ADD, REMOVE, UPDATE_QTY, CLEAR</span></pre>
+    </div>
+  </div>
+
+  <h2 class="section">Custom Hooks &amp; Services</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Hook / Service</th><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>useAuth</td><td>hooks/useAuth.ts</td><td>Login, logout, register, getCurrentUser</td></tr>
+        <tr><td>useCart</td><td>hooks/useCart.ts</td><td>Add/remove items, sync with backend cart</td></tr>
+        <tr><td>useOrders</td><td>hooks/useOrders.ts</td><td>Fetch orders, track status, reorder</td></tr>
+        <tr><td>useRestaurants</td><td>hooks/useRestaurants.ts</td><td>Fetch list, nearby, search, by ID</td></tr>
+        <tr><td>useSocket</td><td>hooks/useSocket.ts</td><td>Socket.IO connection, order room events</td></tr>
+        <tr><td>authService</td><td>services/auth.service.ts</td><td>Axios calls to /api/auth/*</td></tr>
+        <tr><td>restaurantService</td><td>services/restaurant.service.ts</td><td>Axios calls to /api/restaurants/*</td></tr>
+        <tr><td>orderService</td><td>services/order.service.ts</td><td>Axios calls to /api/orders/*</td></tr>
+        <tr><td>paymentService</td><td>services/payment.service.ts</td><td>Initiate Paytm, poll status</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 5 — BACKEND ARCHITECTURE
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 05</div>
+    <div class="section-title">Backend Architecture</div>
+    <div class="section-subtitle">Request lifecycle, middleware stack, and module design</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Request Lifecycle — Middleware Pipeline</div>
+    <div class="mermaid">
+flowchart LR
+    R([HTTP Request]) --> N[Nginx\nSSL + Proxy]
+    N --> A[CORS]
+    A --> B[Helmet\nSecurity Headers]
+    B --> C[Rate Limiter\nRedis-backed]
+    C --> D[Morgan\nRequest Logger]
+    D --> E[Body Parser\nJSON + Cookie]
+    E --> F{Auth\nMiddleware}
+    F -->|Public| G[Route Handler]
+    F -->|Protected| H{Role Check}
+    H -->|Authorized| G
+    H -->|Unauthorized| I([403 Response])
+    G --> J[Controller]
+    J --> K[Service Layer]
+    K --> L[(MongoDB)]
+    K --> M[(Redis)]
+    L --> N2[Response]
+    M --> N2
+    N2 --> O([HTTP Response])
+    style R fill:#E85D04,color:#fff
+    style O fill:#065F46,color:#fff
+    style I fill:#EF4444,color:#fff
+    </div>
+  </div>
+
+  <h2 class="section">Middleware Stack (server.ts)</h2>
+  <pre><span class="comment">// backend/src/server.ts — Middleware registration order</span>
+app.use(cors({ origin: process.env.ALLOWED_ORIGINS, credentials: <span class="key">true</span> }));
+app.use(helmet());                           <span class="comment">// Security headers</span>
+app.use(generalLimiter);                     <span class="comment">// 100 req/15min</span>
+app.use(morgan(<span class="string">'combined'</span>, { stream: winstonStream }));
+app.use(express.json({ limit: <span class="string">'10mb'</span> }));
+app.use(cookieParser());
+app.use(compression());
+
+<span class="comment">// Routes</span>
+app.use(<span class="string">'/api/auth'</span>,    authLimiter, authRouter);     <span class="comment">// 5 req/15min</span>
+app.use(<span class="string">'/api/users'</span>,   authenticate, userRouter);
+app.use(<span class="string">'/api/restaurants'</span>, restaurantRouter);
+app.use(<span class="string">'/api/cart'</span>,    authenticate, cartRouter);
+app.use(<span class="string">'/api/orders'</span>,  authenticate, orderLimiter, orderRouter);
+app.use(<span class="string">'/api/payments'</span>, paymentRouter);              <span class="comment">// webhook is public</span>
+app.use(<span class="string">'/api/reviews'</span>, authenticate, reviewRouter);
+app.use(<span class="string">'/api/admin'</span>,   authenticate, authorize(<span class="string">'admin'</span>), adminRouter);
+app.use(errorHandler);                       <span class="comment">// Global error handler</span></pre>
+
+  <h2 class="section">Module Breakdown</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Module</th><th>Controller</th><th>Service</th><th>Routes</th></tr></thead>
+      <tbody>
+        <tr><td>Auth</td><td>auth.controller.ts</td><td>auth.service.ts</td><td>register, login, logout, refresh, /me</td></tr>
+        <tr><td>Users</td><td>user.controller.ts</td><td>user.service.ts</td><td>profile CRUD, address management</td></tr>
+        <tr><td>Restaurants</td><td>restaurant.controller.ts</td><td>restaurant.service.ts</td><td>CRUD, nearby, search, verify</td></tr>
+        <tr><td>Menu</td><td>menu.controller.ts</td><td>menu.service.ts</td><td>CRUD menu items, image upload</td></tr>
+        <tr><td>Cart</td><td>cart.controller.ts</td><td>cart.service.ts</td><td>get, add, update, clear</td></tr>
+        <tr><td>Orders</td><td>order.controller.ts</td><td>order.service.ts</td><td>create, get, update status, list</td></tr>
+        <tr><td>Payments</td><td>payment.controller.ts</td><td>payment.service.ts</td><td>initiate, webhook, status</td></tr>
+        <tr><td>Reviews</td><td>review.controller.ts</td><td>review.service.ts</td><td>create, list by restaurant</td></tr>
+        <tr><td>Admin</td><td>admin.controller.ts</td><td>admin.service.ts</td><td>users, restaurants, analytics</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 6 — DATABASE DESIGN (LLD)
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 06</div>
+    <div class="section-title">Database Design (LLD)</div>
+    <div class="section-subtitle">MongoDB collections, schemas, indexes, relationships</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Entity Relationship Overview</div>
+    <div class="mermaid">
+erDiagram
+    USERS ||--o{ ORDERS : places
+    USERS ||--|| CARTS : has
+    USERS ||--o{ REVIEWS : writes
+    RESTAURANTS ||--o{ MENU_ITEMS : has
+    RESTAURANTS ||--o{ ORDERS : receives
+    ORDERS ||--|| PAYMENTS : settled_by
+    ORDERS ||--o| REVIEWS : reviewed_via
+    USERS {
+        ObjectId _id
+        string email
+        string role
+        array addresses
+    }
+    RESTAURANTS {
+        ObjectId _id
+        ObjectId ownerId
+        object address
+        object coordinates
+    }
+    ORDERS {
+        ObjectId _id
+        ObjectId userId
+        ObjectId restaurantId
+        string status
+        object deliveryAddress
+    }
+    PAYMENTS {
+        ObjectId _id
+        ObjectId orderId
+        string gatewayPaymentId
+        string idempotencyKey
+    }
+    </div>
+  </div>
+
+  <h3 class="sub">Collection 1 — users</h3>
+  <pre><span class="comment">// Mongoose Schema</span>
+{
+  <span class="key">_id</span>:          ObjectId,
+  <span class="key">name</span>:         String (required, trim),
+  <span class="key">email</span>:        String (required, unique, lowercase),
+  <span class="key">passwordHash</span>: String (required, select: false),
+  <span class="key">role</span>:         <span class="string">'customer' | 'restaurant' | 'admin'</span> (default: 'customer'),
+  <span class="key">phone</span>:        String (optional),
+  <span class="key">avatar</span>:       String (Cloudinary URL),
+  <span class="key">addresses</span>: [{
+    _id: ObjectId, label: String,
+    street: String, city: String, state: String, pincode: String,
+    coordinates: { lat: Number, lng: Number }, isDefault: Boolean
+  }],
+  <span class="key">isActive</span>:     Boolean (default: true),
+  <span class="key">createdAt</span>:    Date, <span class="key">updatedAt</span>: Date
+}
+<span class="comment">// Indexes: email (unique), role</span></pre>
+
+  <h3 class="sub">Collection 2 — restaurants</h3>
+  <pre>{
+  <span class="key">_id</span>:            ObjectId,
+  <span class="key">ownerId</span>:        ObjectId (ref: 'User', required),
+  <span class="key">name</span>:           String (required, text-indexed),
+  <span class="key">description</span>:   String,
+  <span class="key">cuisineTypes</span>:  [String] (indexed),
+  <span class="key">logo</span>:          String (Cloudinary URL),
+  <span class="key">coverImage</span>:    String (Cloudinary URL),
+  <span class="key">address</span>: {
+    street: String, city: String, state: String, pincode: String,
+    <span class="key">location</span>: { type: 'Point', coordinates: [lng, lat] }  <span class="comment">// 2dsphere index</span>
+  },
+  <span class="key">rating</span>:         Number (default: 0, min:0, max:5),
+  <span class="key">totalRatings</span>:  Number (default: 0),
+  <span class="key">isOpen</span>:         Boolean (default: false),
+  <span class="key">openingHours</span>:  { mon-sun: { open: String, close: String } },
+  <span class="key">deliveryRadius</span>: Number (km),
+  <span class="key">minOrder</span>:       Number,
+  <span class="key">deliveryFee</span>:    Number,
+  <span class="key">avgDeliveryTime</span>: Number (minutes),
+  <span class="key">isVerified</span>:    Boolean (default: false),
+  <span class="key">createdAt</span>: Date, <span class="key">updatedAt</span>: Date
+}
+<span class="comment">// Indexes: address.location (2dsphere), cuisineTypes, isOpen, name (text)</span></pre>
+
+  <h3 class="sub">Collection 3 — menuItems</h3>
+  <pre>{
+  <span class="key">_id</span>:            ObjectId,
+  <span class="key">restaurantId</span>:  ObjectId (ref: 'Restaurant', required),
+  <span class="key">name</span>:           String (required),
+  <span class="key">description</span>:   String,
+  <span class="key">price</span>:          Number (required, min: 0),
+  <span class="key">category</span>:      String (e.g. 'Starters', 'Mains', 'Desserts'),
+  <span class="key">image</span>:          String (Cloudinary URL),
+  <span class="key">isVeg</span>:          Boolean (default: false),
+  <span class="key">isAvailable</span>:   Boolean (default: true),
+  <span class="key">tags</span>:           [String] (e.g. ['spicy', 'bestseller']),
+  <span class="key">customizations</span>: [{
+    name: String,  <span class="comment">// e.g. "Size", "Toppings"</span>
+    options: [{ label: String, extraPrice: Number }]
+  }],
+  <span class="key">createdAt</span>: Date, <span class="key">updatedAt</span>: Date
+}
+<span class="comment">// Indexes: restaurantId, category, isAvailable, { restaurantId, category } compound</span></pre>
+
+  <h3 class="sub">Collection 4 — carts</h3>
+  <pre>{
+  <span class="key">_id</span>:           ObjectId,
+  <span class="key">userId</span>:        ObjectId (ref: 'User', unique),  <span class="comment">// one cart per user</span>
+  <span class="key">restaurantId</span>: ObjectId (ref: 'Restaurant'),
+  <span class="key">items</span>: [{
+    menuItemId: ObjectId (ref: 'MenuItem'),
+    name: String, price: Number,
+    quantity: Number (min: 1),
+    customizations: [{ name: String, option: String, extraPrice: Number }],
+    subtotal: Number
+  }],
+  <span class="key">totalAmount</span>:  Number,
+  <span class="key">updatedAt</span>:    Date
+}
+<span class="comment">// TTL Index: updatedAt (expireAfterSeconds: 86400) — auto-clears abandoned carts</span>
+<span class="comment">// Index: userId (unique)</span></pre>
+
+  <h3 class="sub">Collection 5 — orders</h3>
+  <pre>{
+  <span class="key">_id</span>:             ObjectId,
+  <span class="key">userId</span>:          ObjectId (ref: 'User'),
+  <span class="key">restaurantId</span>:   ObjectId (ref: 'Restaurant'),
+  <span class="key">items</span>: [{
+    menuItemId: ObjectId, name: String, price: Number,
+    quantity: Number, customizations: [...], subtotal: Number
+  }],
+  <span class="key">deliveryAddress</span>: { street, city, state, pincode, coordinates },  <span class="comment">// snapshot</span>
+  <span class="key">status</span>:          <span class="string">'pending'|'confirmed'|'preparing'|'out_for_delivery'|'delivered'|'cancelled'</span>,
+  <span class="key">paymentStatus</span>:  <span class="string">'pending'|'paid'|'failed'|'refunded'</span>,
+  <span class="key">paymentId</span>:       ObjectId (ref: 'Payment'),
+  <span class="key">subtotal</span>:        Number,
+  <span class="key">deliveryFee</span>:    Number,
+  <span class="key">taxes</span>:           Number,
+  <span class="key">totalAmount</span>:    Number,
+  <span class="key">estimatedDelivery</span>: Date,
+  <span class="key">deliveryAgent</span>:  String (optional),
+  <span class="key">idempotencyKey</span>: String (unique),
+  <span class="key">createdAt</span>: Date, <span class="key">updatedAt</span>: Date
+}
+<span class="comment">// Indexes: userId, restaurantId, status, createdAt, idempotencyKey (unique)</span>
+<span class="comment">// Shard Key: userId (for horizontal scaling)</span></pre>
+
+  <h3 class="sub">Collection 6 — payments</h3>
+  <pre>{
+  <span class="key">_id</span>:               ObjectId,
+  <span class="key">orderId</span>:           ObjectId (ref: 'Order', unique),
+  <span class="key">userId</span>:            ObjectId (ref: 'User'),
+  <span class="key">amount</span>:            Number,
+  <span class="key">currency</span>:          <span class="string">'INR'</span>,
+  <span class="key">gateway</span>:           <span class="string">'paytm'</span>,
+  <span class="key">gatewayOrderId</span>:   String (Paytm TxnToken),
+  <span class="key">gatewayPaymentId</span>: String (Paytm TxnId),
+  <span class="key">checksum</span>:          String,
+  <span class="key">status</span>:            <span class="string">'pending'|'success'|'failed'|'refunded'</span>,
+  <span class="key">idempotencyKey</span>:   String (unique),
+  <span class="key">metadata</span>:          Mixed (raw Paytm response),
+  <span class="key">createdAt</span>: Date, <span class="key">updatedAt</span>: Date
+}
+<span class="comment">// Indexes: orderId (unique), gatewayPaymentId, idempotencyKey (unique)</span></pre>
+
+  <h3 class="sub">Collection 7 — reviews</h3>
+  <pre>{
+  <span class="key">_id</span>:           ObjectId,
+  <span class="key">userId</span>:        ObjectId (ref: 'User'),
+  <span class="key">restaurantId</span>: ObjectId (ref: 'Restaurant'),
+  <span class="key">orderId</span>:       ObjectId (ref: 'Order', unique),  <span class="comment">// one review per order</span>
+  <span class="key">rating</span>:        Number (min:1, max:5, required),
+  <span class="key">comment</span>:       String (max: 500),
+  <span class="key">images</span>:        [String] (Cloudinary URLs, max 3),
+  <span class="key">helpfulCount</span>: Number (default: 0),
+  <span class="key">createdAt</span>:    Date
+}
+<span class="comment">// Indexes: restaurantId, userId, orderId (unique)</span></pre>
+
+  <h2 class="section">Indexing Strategy Summary</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Collection</th><th>Index</th><th>Type</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>users</td><td>email</td><td>Unique</td><td>Login lookup</td></tr>
+        <tr><td>restaurants</td><td>address.location</td><td>2dsphere</td><td>Geo-proximity search</td></tr>
+        <tr><td>restaurants</td><td>{ cuisineTypes, isOpen }</td><td>Compound</td><td>Filter queries</td></tr>
+        <tr><td>restaurants</td><td>name</td><td>Text</td><td>Search autocomplete</td></tr>
+        <tr><td>menuItems</td><td>{ restaurantId, category }</td><td>Compound</td><td>Menu fetch by category</td></tr>
+        <tr><td>carts</td><td>userId</td><td>Unique</td><td>One cart per user</td></tr>
+        <tr><td>carts</td><td>updatedAt</td><td>TTL (24h)</td><td>Auto-expire abandoned carts</td></tr>
+        <tr><td>orders</td><td>{ userId, createdAt }</td><td>Compound</td><td>Order history</td></tr>
+        <tr><td>orders</td><td>idempotencyKey</td><td>Unique</td><td>Prevent duplicate orders</td></tr>
+        <tr><td>payments</td><td>orderId</td><td>Unique</td><td>One payment per order</td></tr>
+        <tr><td>payments</td><td>idempotencyKey</td><td>Unique</td><td>Payment retry safety</td></tr>
+        <tr><td>reviews</td><td>orderId</td><td>Unique</td><td>One review per order</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 7 — REST API DESIGN
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 07</div>
+    <div class="section-title">REST API Design</div>
+    <div class="section-subtitle">All endpoints, methods, auth requirements, and responses</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <h3 class="sub">Auth Endpoints — /api/auth</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/auth/register</td><td>Public</td><td>Create account (customer/restaurant)</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/auth/login</td><td>Public</td><td>Login → set HTTP-only JWT cookie</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/auth/logout</td><td>JWT</td><td>Clear auth cookie</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/auth/refresh</td><td>Refresh Token</td><td>Issue new access token</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/auth/me</td><td>JWT</td><td>Get current user profile</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">Restaurant Endpoints — /api/restaurants</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/restaurants</td><td>Public</td><td>List all (paginated, filter: cuisine, rating, open)</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/restaurants/nearby</td><td>Public</td><td>Geo search: ?lat=&lng=&radius=</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/restaurants/search</td><td>Public</td><td>Full-text search: ?q=biryani</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/restaurants/:id</td><td>Public</td><td>Restaurant detail + menu</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/restaurants</td><td>Owner</td><td>Create restaurant profile</td></tr>
+        <tr><td><span class="method method-patch">PATCH</span></td><td>/api/restaurants/:id</td><td>Owner</td><td>Update restaurant details</td></tr>
+        <tr><td><span class="method method-patch">PATCH</span></td><td>/api/restaurants/:id/toggle</td><td>Owner</td><td>Toggle open/closed status</td></tr>
+        <tr><td><span class="method method-delete">DELETE</span></td><td>/api/restaurants/:id</td><td>Admin</td><td>Remove restaurant</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">Menu Endpoints — /api/restaurants/:id/menu</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/restaurants/:id/menu</td><td>Public</td><td>Get all menu items (grouped by category)</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/restaurants/:id/menu/items</td><td>Owner</td><td>Add menu item (with image upload)</td></tr>
+        <tr><td><span class="method method-patch">PATCH</span></td><td>/api/restaurants/:id/menu/items/:itemId</td><td>Owner</td><td>Update item details/price/availability</td></tr>
+        <tr><td><span class="method method-delete">DELETE</span></td><td>/api/restaurants/:id/menu/items/:itemId</td><td>Owner</td><td>Remove menu item</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">Cart Endpoints — /api/cart</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/cart</td><td>Customer</td><td>Get current user's cart</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/cart/items</td><td>Customer</td><td>Add item (validates same restaurant)</td></tr>
+        <tr><td><span class="method method-patch">PATCH</span></td><td>/api/cart/items/:itemId</td><td>Customer</td><td>Update quantity</td></tr>
+        <tr><td><span class="method method-delete">DELETE</span></td><td>/api/cart/items/:itemId</td><td>Customer</td><td>Remove item</td></tr>
+        <tr><td><span class="method method-delete">DELETE</span></td><td>/api/cart</td><td>Customer</td><td>Clear entire cart</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">Order Endpoints — /api/orders</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/orders</td><td>Customer</td><td>Place order (from cart, with idempotency key)</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/orders/my</td><td>Customer</td><td>Customer's order history (paginated)</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/orders/:id</td><td>Customer/Owner</td><td>Order detail</td></tr>
+        <tr><td><span class="method method-patch">PATCH</span></td><td>/api/orders/:id/status</td><td>Owner/Admin</td><td>Update order status</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/orders/:id/cancel</td><td>Customer</td><td>Cancel order (before preparing)</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/orders/restaurant</td><td>Owner</td><td>Restaurant's incoming orders</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">Payment Endpoints — /api/payments</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/payments/initiate</td><td>Customer</td><td>Generate Paytm transaction token</td></tr>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/payments/webhook</td><td>Paytm Signature</td><td>Paytm payment callback (checksum verified)</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/payments/:id</td><td>Customer</td><td>Payment status + details</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">Review &amp; Admin Endpoints</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method method-post">POST</span></td><td>/api/reviews</td><td>Customer</td><td>Submit review (one per delivered order)</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/reviews/restaurant/:id</td><td>Public</td><td>Paginated reviews for restaurant</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/admin/users</td><td>Admin</td><td>All users with filters</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/admin/restaurants</td><td>Admin</td><td>All restaurants, verify/suspend</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td>/api/admin/analytics</td><td>Admin</td><td>Revenue, orders, active users stats</td></tr>
+        <tr><td><span class="method method-patch">PATCH</span></td><td>/api/admin/restaurants/:id/verify</td><td>Admin</td><td>Verify restaurant for listing</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Standard Response Format</h2>
+  <pre><span class="comment">// Success</span>
+{ <span class="key">"success"</span>: <span class="key">true</span>, <span class="key">"data"</span>: { ... }, <span class="key">"message"</span>: <span class="string">"Order placed"</span> }
+
+<span class="comment">// Paginated</span>
+{ <span class="key">"success"</span>: <span class="key">true</span>, <span class="key">"data"</span>: [...], <span class="key">"pagination"</span>: { <span class="key">"page"</span>: 1, <span class="key">"limit"</span>: 20, <span class="key">"total"</span>: 150 } }
+
+<span class="comment">// Error</span>
+{ <span class="key">"success"</span>: <span class="key">false</span>, <span class="key">"error"</span>: { <span class="key">"code"</span>: <span class="string">"VALIDATION_ERROR"</span>, <span class="key">"message"</span>: <span class="string">"Email is required"</span> } }</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 8 — AUTH & RBAC
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 08</div>
+    <div class="section-title">Authentication &amp; RBAC</div>
+    <div class="section-subtitle">JWT flow, HTTP-only cookies, role-based access control</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Authentication Flow</div>
+    <div class="mermaid">
+sequenceDiagram
+    participant C as Client
+    participant API as Express API
+    participant DB as MongoDB
+    participant RD as Redis
+
+    C->>API: POST /api/auth/login {email, password}
+    API->>DB: findOne({email}) + select(+passwordHash)
+    DB-->>API: user document
+    API->>API: bcrypt.compare(password, hash)
+    API->>API: sign accessToken (15min) + refreshToken (7d)
+    API->>RD: store refreshToken (7d TTL)
+    API-->>C: Set-Cookie: accessToken (httpOnly, secure, sameSite:strict)
+    Note over C,API: Subsequent requests
+    C->>API: GET /api/orders (Cookie: accessToken)
+    API->>API: verify JWT → extract {userId, role}
+    API->>DB: execute query
+    DB-->>API: data
+    API-->>C: 200 OK {data}
+    Note over C,API: Token refresh
+    C->>API: POST /api/auth/refresh (Cookie: refreshToken)
+    API->>RD: validate refreshToken
+    API->>API: issue new accessToken
+    API-->>C: Set-Cookie: new accessToken
+    </div>
+  </div>
+
+  <h2 class="section">Role Permissions Matrix</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Action</th><th>Customer</th><th>Restaurant Owner</th><th>Admin</th></tr></thead>
+      <tbody>
+        <tr><td>Browse restaurants &amp; menu</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Add to cart / Place order</td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+        <tr><td>View own orders</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Cancel own order</td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Submit review</td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+        <tr><td>Manage own restaurant</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>CRUD menu items</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Update order status</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>View all users</td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Verify restaurants</td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>Platform analytics</td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Middleware Implementation</h2>
+  <pre><span class="comment">// backend/src/middleware/auth.middleware.ts</span>
+<span class="key">export const</span> authenticate = async (req, res, next) => {
+  <span class="key">const</span> token = req.cookies.accessToken;
+  <span class="key">if</span> (!token) <span class="key">return</span> next(<span class="key">new</span> AppError(<span class="string">'Unauthorized'</span>, 401));
+  <span class="key">const</span> payload = jwt.verify(token, process.env.JWT_SECRET) <span class="key">as</span> JwtPayload;
+  req.user = { id: payload.userId, role: payload.role };
+  next();
+};
+
+<span class="key">export const</span> authorize = (...roles: Role[]) => (req, res, next) => {
+  <span class="key">if</span> (!roles.includes(req.user.role))
+    <span class="key">return</span> next(<span class="key">new</span> AppError(<span class="string">'Forbidden'</span>, 403));
+  next();
+};</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 9 — PAYMENT ARCHITECTURE
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 09</div>
+    <div class="section-title">Payment Architecture</div>
+    <div class="section-subtitle">Paytm integration — initiation, callback, webhook, idempotency</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Paytm Payment Sequence Diagram</div>
+    <div class="mermaid">
+sequenceDiagram
+    participant U as Customer
+    participant FE as React Frontend
+    participant BE as Express Backend
+    participant DB as MongoDB
+    participant PT as Paytm Gateway
+
+    U->>FE: Click "Pay Now" on Checkout
+    FE->>BE: POST /api/payments/initiate {orderId, idempotencyKey}
+    BE->>DB: create Payment doc (status: pending)
+    BE->>PT: Initiate Transaction API (orderId, amount, MID, checksum)
+    PT-->>BE: TxnToken
+    BE-->>FE: { txnToken, orderId, amount }
+    FE->>PT: Render Paytm JS Checkout (txnToken)
+    U->>PT: Complete payment (UPI/Card/Wallet)
+    PT-->>FE: Payment callback (client-side)
+    FE->>BE: POST /api/payments/verify
+    Note over PT,BE: Async Webhook (most reliable)
+    PT->>BE: POST /api/payments/webhook {txnId, status, checksum}
+    BE->>BE: Verify Paytm checksum (CRITICAL)
+    BE->>DB: Update Payment status: success/failed
+    BE->>DB: Update Order paymentStatus + status: confirmed
+    BE->>BE: Emit Socket.IO event (order:confirmed)
+    BE->>BE: Queue email notification (BullMQ)
+    FE->>FE: Socket listener → navigate to /orders/:id/track
+    </div>
+  </div>
+
+  <h2 class="section">Idempotency &amp; Retry Safety</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Idempotency Key Pattern</div>
+      <pre><span class="comment">// Generated client-side</span>
+<span class="key">const</span> idempotencyKey =
+  `${userId}-${orderId}-${Date.now()}`;
+
+<span class="comment">// Backend: check before processing</span>
+<span class="key">const</span> existing = <span class="key">await</span> Payment.findOne(
+  { idempotencyKey }
+);
+<span class="key">if</span> (existing) <span class="key">return</span> existing; <span class="comment">// return cached</span></pre>
+    </div>
+    <div class="card">
+      <div class="card-title">Checksum Verification</div>
+      <pre><span class="comment">// backend/src/services/payment.service.ts</span>
+<span class="key">import</span> PaytmChecksum <span class="key">from</span> <span class="string">'paytmchecksum'</span>;
+
+<span class="key">const</span> isValid = <span class="key">await</span>
+  PaytmChecksum.verifySignature(
+    body, MERCHANT_KEY, checksum
+  );
+
+<span class="key">if</span> (!isValid)
+  <span class="key">throw new</span> AppError(<span class="string">'Invalid checksum'</span>, 400);</pre>
+    </div>
+  </div>
+
+  <div class="info-box warning">
+    <div class="info-box-icon">⚠️</div>
+    <div>
+      <div class="info-box-title">Critical Security Note</div>
+      Always verify payment status via Paytm's Transaction Status API from the backend — never trust client-side callback parameters alone. The webhook route must not be behind authentication middleware but MUST verify the Paytm checksum on every call.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 10 — REAL-TIME ORDER TRACKING
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 10</div>
+    <div class="section-title">Real-Time Order Tracking</div>
+    <div class="section-subtitle">Socket.IO events, rooms, and Redis Pub/Sub for scale</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Socket.IO Real-Time Architecture</div>
+    <div class="mermaid">
+flowchart LR
+    subgraph CLIENTS
+        C1[Customer Browser]
+        C2[Restaurant Dashboard]
+    end
+    subgraph BACKEND_INSTANCES
+        S1[Express Instance 1\nSocket.IO]
+        S2[Express Instance 2\nSocket.IO]
+    end
+    subgraph REDIS
+        PUB[Redis Pub/Sub\nChannel: order-events]
+    end
+    C1 -->|join room: order:{id}| S1
+    C2 -->|join room: restaurant:{id}| S2
+    S1 -->|publish event| PUB
+    PUB -->|subscribe| S1
+    PUB -->|subscribe| S2
+    S2 -->|emit to room| C2
+    S1 -->|emit to room| C1
+    style PUB fill:#065F46,color:#fff
+    </div>
+  </div>
+
+  <h2 class="section">Socket.IO Events</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Direction</th><th>Room</th><th>Payload</th></tr></thead>
+      <tbody>
+        <tr><td><code>order:confirmed</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status, estimatedDelivery }</td></tr>
+        <tr><td><code>order:preparing</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status }</td></tr>
+        <tr><td><code>order:dispatched</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status, deliveryAgent }</td></tr>
+        <tr><td><code>order:delivered</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status }</td></tr>
+        <tr><td><code>order:new</code></td><td>Server → Restaurant</td><td>restaurant:{id}</td><td>{ order full object }</td></tr>
+        <tr><td><code>order:cancelled</code></td><td>Server → Both</td><td>order:{orderId}</td><td>{ orderId, reason }</td></tr>
+        <tr><td><code>join:order</code></td><td>Client → Server</td><td>—</td><td>{ orderId }</td></tr>
+        <tr><td><code>join:restaurant</code></td><td>Client → Server</td><td>—</td><td>{ restaurantId }</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre><span class="comment">// backend/src/services/socket.service.ts</span>
+<span class="key">export const</span> emitOrderStatus = (
+  orderId: string, event: OrderEvent, payload: <span class="type">OrderEventPayload</span>
+) => {
+  <span class="comment">// Publish to Redis — all instances receive and re-emit</span>
+  redisClient.publish(<span class="string">'order-events'</span>, JSON.stringify({ orderId, event, payload }));
+};
+
+<span class="comment">// Socket.IO setup</span>
+io.on(<span class="string">'connection'</span>, (socket) => {
+  socket.on(<span class="string">'join:order'</span>, ({ orderId }) => socket.join(`order:${orderId}`));
+  socket.on(<span class="string">'join:restaurant'</span>, ({ restaurantId }) => socket.join(`restaurant:${restaurantId}`));
+});</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 11 — SECURITY ARCHITECTURE
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 11</div>
+    <div class="section-title">Security Architecture</div>
+    <div class="section-subtitle">Defense in depth — transport, application, and data layer</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background:#FEE2E2;">🔒</div>
+      <div class="card-title">Transport Layer</div>
+      <ul class="styled">
+        <li>HTTPS everywhere (TLS 1.3)</li>
+        <li>Nginx: HSTS, SSL certificate (Let's Encrypt)</li>
+        <li>Vercel: auto-HTTPS on all deployments</li>
+        <li>HTTP→HTTPS redirect enforced</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#DBEAFE;">🛡️</div>
+      <div class="card-title">Application Layer</div>
+      <ul class="styled">
+        <li>Helmet: CSP, X-Frame-Options, HSTS</li>
+        <li>CORS: whitelist allowed origins only</li>
+        <li>JWT in HTTP-only, Secure, SameSite=Strict cookies</li>
+        <li>Zod validation on all request bodies</li>
+        <li>bcrypt rounds: 12 for password hashing</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#D1FAE5;">⚡</div>
+      <div class="card-title">Rate Limiting</div>
+      <ul class="styled">
+        <li>General API: 100 req / 15 min</li>
+        <li>Auth routes: 5 req / 15 min (brute force)</li>
+        <li>Order creation: 10 req / min</li>
+        <li>Backed by Redis (distributed)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#EDE9FE;">🗄️</div>
+      <div class="card-title">Data Layer</div>
+      <ul class="styled">
+        <li>MongoDB Atlas IP whitelist</li>
+        <li>Separate DB users per service (least privilege)</li>
+        <li>Idempotency keys on payments</li>
+        <li>Paytm checksum verification on webhook</li>
+        <li>ObjectId validation on all params</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="section">Security Headers (Helmet Config)</h2>
+  <pre><span class="comment">// backend/src/config/helmet.config.ts</span>
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: [<span class="string">"'self'"</span>],
+      scriptSrc: [<span class="string">"'self'"</span>, <span class="string">'https://securegw.paytm.in'</span>],
+      frameSrc: [<span class="string">'https://securegw.paytm.in'</span>],
+      imgSrc: [<span class="string">"'self'"</span>, <span class="string">'https://res.cloudinary.com'</span>, <span class="string">'data:'</span>],
+    }
+  },
+  hsts: { maxAge: 31536000, includeSubDomains: <span class="key">true</span> },
+  noSniff: <span class="key">true</span>,
+  xssFilter: <span class="key">true</span>,
+  frameguard: { action: <span class="string">'deny'</span> },
+}));</pre>
+
+  <h2 class="section">Input Validation Pattern (Zod)</h2>
+  <pre><span class="comment">// backend/src/validators/order.validator.ts</span>
+<span class="key">export const</span> createOrderSchema = z.object({
+  body: z.object({
+    deliveryAddressId: z.string().regex(<span class="string">/^[a-f\d]{24}$/i</span>, <span class="string">'Invalid ObjectId'</span>),
+    idempotencyKey: z.string().min(20).max(100),
+    paymentMethod: z.enum([<span class="string">'paytm'</span>]),
+  })
+});
+
+<span class="comment">// Applied as middleware</span>
+router.post(<span class="string">'/'</span>, validate(createOrderSchema), orderController.create);</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 12 — DEPLOYMENT ARCHITECTURE
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 12</div>
+    <div class="section-title">Deployment Architecture</div>
+    <div class="section-subtitle">CI/CD pipeline, Docker, and cloud hosting</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-title">CI/CD Pipeline — GitHub Actions</div>
+    <div class="mermaid">
+flowchart LR
+    A[Git Push\nfeature branch] --> B[PR Created]
+    B --> C[GitHub Actions\nCI Pipeline]
+    C --> D[Lint\nESLint + TSC]
+    D --> E[Test\nJest + Vitest]
+    E --> F[Build\nDocker Image]
+    F --> G{Tests\nPassed?}
+    G -->|No| H[PR Blocked\nFeedback to Dev]
+    G -->|Yes| I[PR Review]
+    I --> J[Squash Merge\nto main]
+    J --> K[CD Pipeline]
+    K --> L[Frontend\nDeploy Vercel]
+    K --> M[Backend\nDeploy Render]
+    style A fill:#1A1A2E,color:#fff
+    style J fill:#E85D04,color:#fff
+    style L fill:#065F46,color:#fff
+    style M fill:#065F46,color:#fff
+    style H fill:#EF4444,color:#fff
+    </div>
+  </div>
+
+  <h2 class="section">Docker Compose (Local Dev)</h2>
+  <pre><span class="comment"># docker-compose.yml</span>
+<span class="key">services</span>:
+  <span class="key">mongodb</span>:
+    image: mongo:7
+    volumes: [mongo-data:/data/db]
+    ports: [<span class="string">"27017:27017"</span>]
+
+  <span class="key">redis</span>:
+    image: redis:7-alpine
+    ports: [<span class="string">"6379:6379"</span>]
+
+  <span class="key">backend</span>:
+    build: ./backend
+    env_file: ./backend/.env
+    ports: [<span class="string">"5000:5000"</span>]
+    depends_on: [mongodb, redis]
+    volumes: [./backend/src:/app/src]  <span class="comment"># hot reload</span>
+
+  <span class="key">frontend</span>:
+    build: ./frontend
+    env_file: ./frontend/.env
+    ports: [<span class="string">"5173:5173"</span>]
+    depends_on: [backend]
+
+  <span class="key">nginx</span>:
+    image: nginx:alpine
+    volumes: [./nginx.conf:/etc/nginx/conf.d/default.conf]
+    ports: [<span class="string">"80:80"</span>, <span class="string">"443:443"</span>]
+    depends_on: [frontend, backend]</pre>
+
+  <h2 class="section">Environment Variables</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Variable</th><th>File</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>MONGODB_URI</td><td>backend/.env</td><td>MongoDB Atlas connection string</td></tr>
+        <tr><td>REDIS_URL</td><td>backend/.env</td><td>Redis connection URL</td></tr>
+        <tr><td>JWT_SECRET</td><td>backend/.env</td><td>JWT signing secret (256-bit minimum)</td></tr>
+        <tr><td>JWT_REFRESH_SECRET</td><td>backend/.env</td><td>Separate secret for refresh tokens</td></tr>
+        <tr><td>PAYTM_MID</td><td>backend/.env</td><td>Paytm Merchant ID</td></tr>
+        <tr><td>PAYTM_MERCHANT_KEY</td><td>backend/.env</td><td>Paytm Merchant Key (never log)</td></tr>
+        <tr><td>CLOUDINARY_URL</td><td>backend/.env</td><td>Cloudinary API URL</td></tr>
+        <tr><td>ALLOWED_ORIGINS</td><td>backend/.env</td><td>Comma-separated CORS origins</td></tr>
+        <tr><td>VITE_API_URL</td><td>frontend/.env</td><td>Backend API base URL</td></tr>
+        <tr><td>VITE_PAYTM_MID</td><td>frontend/.env</td><td>Paytm MID for JS checkout</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 13 — SCALABILITY
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 13</div>
+    <div class="section-title">Scalability Design</div>
+    <div class="section-subtitle">Caching, queues, sharding, and horizontal scaling</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <h2 class="section">Redis Caching Strategy</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Cached Data</th><th>Cache Key</th><th>TTL</th><th>Invalidation</th></tr></thead>
+      <tbody>
+        <tr><td>Restaurant list (by city)</td><td>restaurants:city:{city}</td><td>5 min</td><td>On restaurant update/create</td></tr>
+        <tr><td>Menu items</td><td>menu:restaurant:{id}</td><td>10 min</td><td>On menu item CRUD</td></tr>
+        <tr><td>Restaurant detail</td><td>restaurant:{id}</td><td>10 min</td><td>On restaurant update</td></tr>
+        <tr><td>User session</td><td>session:{userId}</td><td>7 days</td><td>On logout</td></tr>
+        <tr><td>Rate limit counter</td><td>rl:{ip}:{route}</td><td>15 min</td><td>Auto-expire</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">BullMQ Job Queues</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Queue</th><th>Jobs</th><th>Retry Policy</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td>order-processing</td><td>validateOrder, notifyRestaurant, clearCart</td><td>3 retries, exp backoff</td><td>High</td></tr>
+        <tr><td>notification</td><td>pushNotification, smsAlert</td><td>2 retries</td><td>Medium</td></tr>
+        <tr><td>email</td><td>orderConfirmation, passwordReset, receipt</td><td>5 retries, 1hr delay</td><td>Low</td></tr>
+        <tr><td>analytics</td><td>updateRestaurantRating, dailyReport</td><td>1 retry</td><td>Low</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">MongoDB Sharding (Production Scale)</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Orders Collection</div>
+      <pre><span class="comment">// Shard by userId</span>
+sh.shardCollection(
+  <span class="string">"magizhthunnu.orders"</span>,
+  { userId: <span class="string">"hashed"</span> }
+)
+<span class="comment">// Distributes load evenly
+// Co-locates a user's orders</span></pre>
+    </div>
+    <div class="card">
+      <div class="card-title">Restaurants Collection</div>
+      <pre><span class="comment">// Shard by location</span>
+sh.shardCollection(
+  <span class="string">"magizhthunnu.restaurants"</span>,
+  { <span class="string">"address.location"</span>: <span class="string">"2dsphere"</span> }
+)
+<span class="comment">// Geo-local queries fast
+// City-level partitioning</span></pre>
+    </div>
+  </div>
+
+  <h2 class="section">Load Balancing (Nginx)</h2>
+  <pre><span class="comment"># nginx.conf — upstream for multiple backend instances</span>
+<span class="key">upstream</span> backend {
+  least_conn;                           <span class="comment"># route to least busy</span>
+  <span class="key">server</span> backend1:5000;
+  <span class="key">server</span> backend2:5000;
+  <span class="key">server</span> backend3:5000;
+  keepalive 32;
+}
+
+<span class="key">server</span> {
+  listen 443 ssl;
+  location /api { proxy_pass http://backend; }
+  location /socket.io { proxy_pass http://backend; proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection <span class="string">"upgrade"</span>; }
+}</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 14 — TESTING STRATEGY
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 14</div>
+    <div class="section-title">Testing Strategy</div>
+    <div class="section-subtitle">Unit, integration, and E2E testing with 80%+ coverage target</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">Frontend Testing</div>
+      <ul class="styled">
+        <li><strong>Vitest</strong> — Unit tests for hooks, utils, services</li>
+        <li><strong>React Testing Library</strong> — Component interaction tests</li>
+        <li><strong>MSW (Mock Service Worker)</strong> — API response mocking</li>
+        <li><strong>Coverage target:</strong> 80%+</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Backend Testing</div>
+      <ul class="styled">
+        <li><strong>Jest</strong> — Unit tests for services, utils, validators</li>
+        <li><strong>Supertest</strong> — HTTP integration tests for all routes</li>
+        <li><strong>mongodb-memory-server</strong> — In-memory DB for tests</li>
+        <li><strong>Coverage target:</strong> 80%+</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="section">Critical Test Cases by Module</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Module</th><th>Test Cases</th></tr></thead>
+      <tbody>
+        <tr><td>Auth</td><td>Register with duplicate email (400), login with wrong password (401), JWT expiry → 401, refresh token flow</td></tr>
+        <tr><td>Cart</td><td>Add items from different restaurants (400), quantity update, cart auto-clear on checkout</td></tr>
+        <tr><td>Orders</td><td>Place order from empty cart (400), idempotency key duplicate (409), status transition validation</td></tr>
+        <tr><td>Payments</td><td>Invalid Paytm checksum rejected (400), duplicate idempotency key returns cached, failed payment doesn't confirm order</td></tr>
+        <tr><td>RBAC</td><td>Customer cannot update order status (403), owner cannot access another restaurant (403), admin can access all</td></tr>
+        <tr><td>Rate Limiting</td><td>5+ auth attempts within 15min → 429, order burst → 429</td></tr>
+        <tr><td>Reviews</td><td>Review on undelivered order (400), duplicate review on same order (409)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Test Command Reference</h2>
+  <pre><span class="comment"># Backend</span>
+npm test                      <span class="comment"># Run all Jest tests</span>
+npm run test:coverage          <span class="comment"># Coverage report</span>
+npm run test:watch             <span class="comment"># Watch mode</span>
+
+<span class="comment"># Frontend</span>
+npm test                      <span class="comment"># Run Vitest</span>
+npm run test:ui                <span class="comment"># Vitest UI</span>
+npm run test:coverage          <span class="comment"># Coverage report</span></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 15 — FOLDER STRUCTURE
+══════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Section 15</div>
+    <div class="section-title">Complete Folder Structure</div>
+    <div class="section-subtitle">Annotated directory tree for both frontend and backend</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <h2 class="section">Frontend Structure</h2>
+  <div class="tree">
+<span class="dir">frontend/</span>
+├── <span class="dir">public/</span>                      <span class="comment"># Static assets (favicon, og-image)</span>
+├── <span class="dir">src/</span>
+│   ├── <span class="file">main.tsx</span>               <span class="comment"># Entry point — ReactDOM.createRoot</span>
+│   ├── <span class="file">App.tsx</span>                <span class="comment"># Root component — providers + router</span>
+│   ├── <span class="dir">pages/</span>
+│   │   ├── <span class="file">HomePage.tsx</span>
+│   │   ├── <span class="file">RestaurantListPage.tsx</span>
+│   │   ├── <span class="file">RestaurantDetailPage.tsx</span>
+│   │   ├── <span class="file">CartPage.tsx</span>
+│   │   ├── <span class="file">CheckoutPage.tsx</span>
+│   │   ├── <span class="file">OrderTrackingPage.tsx</span>
+│   │   ├── <span class="file">OrderHistoryPage.tsx</span>
+│   │   ├── <span class="file">ProfilePage.tsx</span>
+│   │   ├── <span class="dir">auth/</span>
+│   │   │   ├── <span class="file">LoginPage.tsx</span>
+│   │   │   └── <span class="file">RegisterPage.tsx</span>
+│   │   ├── <span class="dir">dashboard/</span>             <span class="comment"># Restaurant owner dashboard</span>
+│   │   │   ├── <span class="file">RestaurantDashboard.tsx</span>
+│   │   │   ├── <span class="file">MenuManagement.tsx</span>
+│   │   │   └── <span class="file">OrderManagement.tsx</span>
+│   │   └── <span class="dir">admin/</span>
+│   │       ├── <span class="file">AdminDashboard.tsx</span>
+│   │       └── <span class="file">AnalyticsPage.tsx</span>
+│   ├── <span class="dir">components/</span>
+│   │   ├── <span class="dir">ui/</span>                    <span class="comment"># Base: Button, Input, Modal, Spinner</span>
+│   │   ├── <span class="dir">layout/</span>                <span class="comment"># Navbar, Footer, Sidebar</span>
+│   │   ├── <span class="dir">restaurant/</span>            <span class="comment"># RestaurantCard, MenuItemCard</span>
+│   │   ├── <span class="dir">cart/</span>                  <span class="comment"># CartDrawer, CartItem</span>
+│   │   ├── <span class="dir">order/</span>                 <span class="comment"># OrderStatusStepper, OrderCard</span>
+│   │   └── <span class="dir">payment/</span>               <span class="comment"># PaytmCheckout wrapper</span>
+│   ├── <span class="dir">context/</span>
+│   │   ├── <span class="file">AuthContext.tsx</span>
+│   │   └── <span class="file">CartContext.tsx</span>
+│   ├── <span class="dir">hooks/</span>
+│   │   ├── <span class="file">useAuth.ts</span>
+│   │   ├── <span class="file">useCart.ts</span>
+│   │   ├── <span class="file">useOrders.ts</span>
+│   │   ├── <span class="file">useRestaurants.ts</span>
+│   │   └── <span class="file">useSocket.ts</span>
+│   ├── <span class="dir">services/</span>              <span class="comment"># Axios API calls per domain</span>
+│   │   ├── <span class="file">api.ts</span>               <span class="comment"># Axios instance + interceptors</span>
+│   │   ├── <span class="file">auth.service.ts</span>
+│   │   ├── <span class="file">restaurant.service.ts</span>
+│   │   ├── <span class="file">order.service.ts</span>
+│   │   └── <span class="file">payment.service.ts</span>
+│   ├── <span class="dir">types/</span>
+│   │   ├── <span class="file">user.types.ts</span>
+│   │   ├── <span class="file">restaurant.types.ts</span>
+│   │   ├── <span class="file">order.types.ts</span>
+│   │   └── <span class="file">payment.types.ts</span>
+│   └── <span class="dir">utils/</span>
+│       ├── <span class="file">formatCurrency.ts</span>
+│       └── <span class="file">validators.ts</span>
+├── <span class="file">.env</span>                       <span class="comment"># VITE_API_URL, VITE_PAYTM_MID</span>
+├── <span class="file">vite.config.ts</span>
+├── <span class="file">tsconfig.json</span>
+└── <span class="file">package.json</span>
+  </div>
+
+  <h2 class="section">Backend Structure</h2>
+  <div class="tree">
+<span class="dir">backend/</span>
+├── <span class="dir">src/</span>
+│   ├── <span class="file">server.ts</span>              <span class="comment"># Express app bootstrap + middleware registration</span>
+│   ├── <span class="dir">config/</span>
+│   │   ├── <span class="file">db.ts</span>              <span class="comment"># Mongoose connection + retry logic</span>
+│   │   ├── <span class="file">redis.ts</span>           <span class="comment"># ioredis client setup</span>
+│   │   ├── <span class="file">cloudinary.ts</span>      <span class="comment"># Cloudinary SDK config</span>
+│   │   └── <span class="file">logger.ts</span>          <span class="comment"># Winston logger config</span>
+│   ├── <span class="dir">models/</span>                <span class="comment"># Mongoose schemas</span>
+│   │   ├── <span class="file">User.model.ts</span>
+│   │   ├── <span class="file">Restaurant.model.ts</span>
+│   │   ├── <span class="file">MenuItem.model.ts</span>
+│   │   ├── <span class="file">Cart.model.ts</span>
+│   │   ├── <span class="file">Order.model.ts</span>
+│   │   ├── <span class="file">Payment.model.ts</span>
+│   │   └── <span class="file">Review.model.ts</span>
+│   ├── <span class="dir">routes/</span>
+│   │   ├── <span class="file">auth.routes.ts</span>
+│   │   ├── <span class="file">user.routes.ts</span>
+│   │   ├── <span class="file">restaurant.routes.ts</span>
+│   │   ├── <span class="file">menu.routes.ts</span>
+│   │   ├── <span class="file">cart.routes.ts</span>
+│   │   ├── <span class="file">order.routes.ts</span>
+│   │   ├── <span class="file">payment.routes.ts</span>
+│   │   ├── <span class="file">review.routes.ts</span>
+│   │   └── <span class="file">admin.routes.ts</span>
+│   ├── <span class="dir">controllers/</span>           <span class="comment"># Request handlers — call services, send response</span>
+│   ├── <span class="dir">services/</span>              <span class="comment"># Business logic — DB queries, external calls</span>
+│   │   └── <span class="file">payment.service.ts</span>   <span class="comment"># Paytm checksum, initiate, verify</span>
+│   ├── <span class="dir">middleware/</span>
+│   │   ├── <span class="file">auth.middleware.ts</span>   <span class="comment"># authenticate + authorize</span>
+│   │   ├── <span class="file">validate.middleware.ts</span> <span class="comment"># Zod request validation</span>
+│   │   ├── <span class="file">rateLimiter.ts</span>       <span class="comment"># Redis-backed rate limiter</span>
+│   │   └── <span class="file">errorHandler.ts</span>      <span class="comment"># Global error handler</span>
+│   ├── <span class="dir">queues/</span>
+│   │   ├── <span class="file">email.queue.ts</span>
+│   │   ├── <span class="file">notification.queue.ts</span>
+│   │   └── <span class="file">orderProcessing.queue.ts</span>
+│   ├── <span class="dir">validators/</span>            <span class="comment"># Zod schemas per module</span>
+│   ├── <span class="dir">utils/</span>
+│   │   ├── <span class="file">AppError.ts</span>
+│   │   ├── <span class="file">asyncHandler.ts</span>      <span class="comment"># try/catch wrapper for async routes</span>
+│   │   └── <span class="file">pagination.ts</span>
+│   └── <span class="dir">types/</span>                 <span class="comment"># Backend TypeScript interfaces</span>
+├── <span class="dir">tests/</span>
+│   ├── <span class="dir">unit/</span>
+│   └── <span class="dir">integration/</span>
+├── <span class="file">.env</span>                       <span class="comment"># All backend secrets (never commit)</span>
+├── <span class="file">Dockerfile</span>
+├── <span class="file">tsconfig.json</span>             <span class="comment"># strict: true, no any</span>
+└── <span class="file">package.json</span>
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:60px; padding-top:24px; border-top:2px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <div style="font-size:18px; font-weight:800; color:var(--gray-900);">Magizh<span style="color:var(--primary);">thunnu</span></div>
+      <div style="font-size:12px; color:var(--gray-600);">System Design Document v1.0 — March 2026</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:12px; color:var(--gray-600);">Designed by Senior Full Stack Architect</div>
+      <div style="font-size:12px; color:var(--gray-600);">MERN Stack · TypeScript · MongoDB · Paytm</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    themeVariables: {
+      primaryColor: '#E85D04',
+      primaryTextColor: '#fff',
+      primaryBorderColor: '#C44D02',
+      lineColor: '#374151',
+      secondaryColor: '#1A1A2E',
+      tertiaryColor: '#F3F4F6'
+    },
+    flowchart: { htmlLabels: true, curve: 'basis' },
+    sequence: { showSequenceNumbers: false }
+  });
+</script>
+</body>
+</html>

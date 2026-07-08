@@ -1,0 +1,20 @@
+# Root-level safety net only. Each app keeps its own, more specific
+# .gitignore — git applies both, nested rules and root rules combine.
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/settings.json
+
+# Generic catch-alls (any app, any depth)
+**/node_modules/
+**/dist/
+**/build/
+**/.env
+**/.env.local
+**/.env.*.local
+**/coverage/
+**/*.log

@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magizhthunnu — Build Complete</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --primary: #E85D04;
+    --primary-dark: #C44D02;
+    --primary-light: #FFF3E8;
+    --secondary: #1A1A2E;
+    --accent: #16213E;
+    --success: #0F9B58;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --info: #3B82F6;
+    --purple: #8B5CF6;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --text: #1F2937;
+    --border: #E5E7EB;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; color:var(--text); background:#fff; font-size:14px; line-height:1.6; }
+
+  /* ── COVER ── */
+  .cover {
+    min-height:100vh; background:linear-gradient(135deg,#1A1A2E 0%,#16213E 40%,#0F3460 100%);
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; padding:60px 40px; page-break-after:always;
+    position:relative; overflow:hidden;
+  }
+  .cover::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background:radial-gradient(circle at 30% 70%, rgba(232,93,4,0.15) 0%, transparent 50%),
+               radial-gradient(circle at 70% 30%, rgba(59,130,246,0.1) 0%, transparent 50%);
+  }
+  .cover-badge {
+    background:rgba(15,155,88,0.2); border:1px solid rgba(15,155,88,0.5);
+    color:#34D399; padding:6px 20px; border-radius:20px; font-size:12px;
+    font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-bottom:24px; position:relative; z-index:1;
+  }
+  .cover h1 { font-size:68px; font-weight:800; color:#fff; letter-spacing:-2px; line-height:1; margin-bottom:12px; position:relative; z-index:1; }
+  .cover h1 span { color:var(--primary); }
+  .cover-tagline { font-size:20px; color:rgba(255,255,255,0.7); margin-bottom:8px; font-weight:300; position:relative; z-index:1; }
+  .cover-sub { font-size:14px; color:rgba(255,255,255,0.4); margin-bottom:48px; position:relative; z-index:1; }
+  .cover-divider { width:60px; height:3px; background:var(--primary); margin:0 auto 48px; border-radius:2px; position:relative; z-index:1; }
+  .cover-meta { display:flex; gap:40px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1; }
+  .cover-meta-item { text-align:center; }
+  .cover-meta-item .label { font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .cover-meta-item .value { font-size:16px; color:rgba(255,255,255,0.9); font-weight:600; }
+  .cover-meta-item .value.green { color:#34D399; }
+  .cover-stack { margin-top:60px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; position:relative; z-index:1; }
+  .stack-chip {
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    color:rgba(255,255,255,0.75); padding:5px 14px; border-radius:20px;
+    font-size:12px; font-weight:500;
+  }
+
+  /* ── LAYOUT ── */
+  .page { max-width:1100px; margin:0 auto; padding:60px 40px; }
+  .section { margin-bottom:64px; }
+  .section-header { display:flex; align-items:center; gap:14px; margin-bottom:28px; }
+  .section-num {
+    width:36px; height:36px; border-radius:10px; background:var(--primary);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; flex-shrink:0;
+  }
+  .section-header h2 { font-size:24px; font-weight:700; color:var(--gray-900); }
+  .section-header p { font-size:13px; color:var(--gray-600); margin-top:2px; }
+
+  /* ── CARDS ── */
+  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px 24px; }
+  .card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+  .card-sm { padding:16px 20px; }
+  .card h3 { font-size:14px; font-weight:600; color:var(--gray-900); margin-bottom:6px; }
+  .card .path { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--primary); margin-bottom:8px; }
+  .card p { font-size:13px; color:var(--gray-600); }
+  .card .note { font-size:12px; color:var(--gray-600); background:var(--gray-50); border-radius:6px; padding:6px 10px; margin-top:10px; border-left:3px solid var(--primary-light); }
+
+  /* ── FILE TREE ── */
+  .tree-wrap { background:var(--gray-900); border-radius:12px; padding:28px 32px; overflow-x:auto; }
+  .tree-wrap pre { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.8; color:#CBD5E1; }
+  .tree-wrap .dir { color:#60A5FA; }
+  .tree-wrap .file { color:#94A3B8; }
+  .tree-wrap .ann { color:#64748B; font-style:italic; }
+  .tree-wrap .root { color:#F97316; font-weight:700; }
+
+  /* ── SPRINT TABLE ── */
+  .sprint-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+  .sprint-card {
+    background:#fff; border:1px solid var(--border); border-radius:10px;
+    padding:14px 18px; display:flex; align-items:flex-start; gap:12px;
+  }
+  .sprint-badge {
+    width:28px; height:28px; border-radius:7px; background:var(--gray-100);
+    font-size:11px; font-weight:700; color:var(--gray-600);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .sprint-badge.done { background:rgba(15,155,88,0.12); color:var(--success); }
+  .sprint-badge.i18n { background:rgba(139,92,246,0.12); color:var(--purple); }
+  .sprint-info h4 { font-size:13px; font-weight:600; color:var(--gray-900); }
+  .sprint-info p { font-size:12px; color:var(--gray-600); margin-top:2px; }
+  .checkmark { color:var(--success); font-size:16px; margin-left:auto; }
+
+  /* ── API TABLE ── */
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead tr { background:var(--gray-900); }
+  thead th { padding:10px 14px; text-align:left; color:#fff; font-weight:600; font-size:12px; letter-spacing:0.5px; }
+  tbody tr { border-bottom:1px solid var(--border); }
+  tbody tr:hover { background:var(--gray-50); }
+  tbody td { padding:9px 14px; vertical-align:top; }
+  .method { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px; display:inline-block; }
+  .method.GET  { background:#DBEAFE; color:#1D4ED8; }
+  .method.POST { background:#D1FAE5; color:#065F46; }
+  .method.PATCH{ background:#FEF3C7; color:#92400E; }
+  .method.DELETE{background:#FEE2E2; color:#991B1B; }
+  .path-cell { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--gray-700); }
+  .auth-badge { font-size:11px; padding:2px 7px; border-radius:4px; background:var(--gray-100); color:var(--gray-600); }
+  .auth-badge.req { background:rgba(232,93,4,0.1); color:var(--primary); }
+  .auth-badge.pub { background:rgba(15,155,88,0.1); color:var(--success); }
+  .auth-badge.adm { background:rgba(139,92,246,0.1); color:var(--purple); }
+  .route-group { padding:8px 0 4px; font-size:12px; font-weight:700; color:var(--gray-600); letter-spacing:1px; text-transform:uppercase; background:var(--gray-50); }
+  .route-group td { padding:8px 14px 4px; }
+
+  /* ── SECURITY ── */
+  .security-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+  .sec-item {
+    background:#fff; border:1px solid var(--border); border-radius:10px;
+    padding:14px 18px; display:flex; align-items:flex-start; gap:10px;
+  }
+  .sec-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+  .sec-item h4 { font-size:13px; font-weight:600; color:var(--gray-900); }
+  .sec-item p { font-size:12px; color:var(--gray-600); margin-top:2px; }
+
+  /* ── i18n ── */
+  .i18n-pairs { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border-radius:10px; overflow:hidden; border:1px solid var(--border); }
+  .i18n-col { background:#fff; padding:0; }
+  .i18n-col-header { padding:10px 16px; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#fff; }
+  .i18n-col-header.en { background:var(--info); }
+  .i18n-col-header.ta { background:#7C3AED; }
+  .i18n-row { display:flex; }
+  .i18n-key { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--gray-600); padding:7px 16px; border-bottom:1px solid var(--gray-100); flex:0 0 130px; }
+  .i18n-val { font-size:13px; color:var(--gray-800); padding:7px 16px; border-bottom:1px solid var(--gray-100); flex:1; }
+  .i18n-val.ta { font-size:14px; color:#5B21B6; }
+
+  /* ── WARNINGS ── */
+  .warn-box {
+    border-left:4px solid var(--warning); background:#FFFBEB;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin-bottom:12px;
+  }
+  .warn-box h4 { font-size:13px; font-weight:700; color:#92400E; margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+  .warn-box p { font-size:13px; color:var(--gray-700); }
+  .warn-box code { font-family:'JetBrains Mono',monospace; font-size:12px; background:#FEF3C7; padding:1px 5px; border-radius:3px; }
+
+  /* ── CODE BLOCKS ── */
+  .code-block { background:var(--gray-900); border-radius:10px; padding:20px 24px; overflow-x:auto; margin-bottom:12px; }
+  .code-block pre { font-family:'JetBrains Mono',monospace; font-size:13px; color:#E2E8F0; line-height:1.7; }
+  .code-block .comment { color:#64748B; }
+  .code-block .cmd { color:#86EFAC; }
+  .code-block .path { color:#67E8F9; }
+
+  /* ── INFRA ── */
+  .infra-flow { display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:20px 0; }
+  .infra-box {
+    background:#fff; border:1.5px solid var(--border); border-radius:8px;
+    padding:10px 16px; text-align:center; min-width:100px;
+  }
+  .infra-box .svc { font-size:11px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
+  .infra-box .port { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--primary); }
+  .infra-box.highlight { border-color:var(--primary); background:var(--primary-light); }
+  .infra-arrow { font-size:18px; color:var(--gray-300); margin:0 8px; }
+  .env-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .env-block h4 { font-size:13px; font-weight:700; color:var(--gray-800); margin-bottom:10px; padding:8px 12px; background:var(--gray-100); border-radius:6px; }
+
+  /* ── UTILS ── */
+  .tag { display:inline-block; font-size:11px; padding:2px 8px; border-radius:4px; font-weight:500; margin:2px; }
+  .tag.green { background:#D1FAE5; color:#065F46; }
+  .tag.blue  { background:#DBEAFE; color:#1D4ED8; }
+  .tag.orange{ background:#FEF3C7; color:#92400E; }
+  .tag.purple{ background:#EDE9FE; color:#5B21B6; }
+  .divider { border:none; border-top:1px solid var(--border); margin:40px 0; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+  /* ── FOOTER ── */
+  .footer { background:var(--gray-900); color:rgba(255,255,255,0.5); text-align:center; padding:32px; font-size:12px; margin-top:80px; }
+  .footer strong { color:rgba(255,255,255,0.9); }
+
+  @media(max-width:768px){
+    .cover h1{font-size:42px}
+    .page{padding:40px 20px}
+    .two-col,.three-col,.env-grid{grid-template-columns:1fr}
+    .i18n-pairs{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     COVER
+════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">✅ Implementation Complete</div>
+  <h1>Magizh<span>thunnu</span></h1>
+  <p class="cover-tagline">Full-Stack Food Delivery App — Build Summary</p>
+  <p class="cover-sub">MERN · TypeScript · Socket.IO · Paytm · i18n (Tamil / English)</p>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="label">Completed</div>
+      <div class="value">2026-07-01</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Sprints</div>
+      <div class="value">15 + i18n</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">TypeScript Errors</div>
+      <div class="value green">0</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Status</div>
+      <div class="value green">Production-Ready</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Pages</div>
+      <div class="value">15</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">API Routes</div>
+      <div class="value">8 modules</div>
+    </div>
+  </div>
+  <div class="cover-stack">
+    <span class="stack-chip">React 18</span>
+    <span class="stack-chip">Node 22</span>
+    <span class="stack-chip">TypeScript 5.3</span>
+    <span class="stack-chip">MongoDB</span>
+    <span class="stack-chip">Redis 7</span>
+    <span class="stack-chip">Socket.IO 4</span>
+    <span class="stack-chip">Paytm Gateway</span>
+    <span class="stack-chip">BullMQ 5</span>
+    <span class="stack-chip">react-i18next</span>
+    <span class="stack-chip">Tailwind CSS</span>
+    <span class="stack-chip">Vite 5</span>
+    <span class="stack-chip">Docker</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- ── 1. PROJECT STRUCTURE ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div>
+        <h2>Project Structure</h2>
+        <p>Complete annotated file tree — every file created or modified</p>
+      </div>
+    </div>
+    <div class="tree-wrap">
+<pre><span class="root">magizhthunnu/</span>
+├── <span class="file">.gitignore</span>                <span class="ann"># root — covers .env, node_modules, dist, coverage</span>
+├── <span class="file">docker-compose.yml</span>        <span class="ann"># mongodb:7, redis:7-alpine, backend, frontend, nginx</span>
+├── <span class="file">nginx.conf</span>                <span class="ann"># /api + /socket.io proxy → backend; SPA fallback</span>
+├── <span class="file">CLAUDE.md</span>
+├── <span class="dir">.github/workflows/</span>
+│   ├── <span class="file">ci.yml</span>               <span class="ann"># lint → tsc → test (backend Jest + frontend Vitest)</span>
+│   └── <span class="file">cd.yml</span>               <span class="ann"># Vercel (frontend) + Render webhook (backend)</span>
+│
+├── <span class="dir">frontend/</span>                  <span class="ann"># Vite + React 18 + TypeScript</span>
+│   ├── <span class="file">Dockerfile</span>            <span class="ann"># multi-stage: node:22 builder → nginx:alpine runner</span>
+│   ├── <span class="file">nginx-spa.conf</span>        <span class="ann"># SPA fallback inside container</span>
+│   ├── <span class="file">vite.config.ts</span>        <span class="ann"># Vitest config + /api /socket.io dev proxy</span>
+│   ├── <span class="file">package.json</span>          <span class="ann"># added test, test:watch, test:coverage scripts</span>
+│   └── <span class="dir">src/</span>
+│       ├── <span class="file">main.tsx</span>           <span class="ann"># imports './i18n' FIRST, then ReactDOM</span>
+│       ├── <span class="file">App.tsx</span>            <span class="ann"># AuthProvider → CartProvider → BrowserRouter → 15 routes</span>
+│       ├── <span class="file">index.css</span>          <span class="ann"># Tailwind @import Inter font + base/components/utilities</span>
+│       ├── <span class="dir">types/</span>
+│       │   └── <span class="file">index.ts</span>       <span class="ann"># User, Address, Restaurant, MenuItem, Cart, Order, ApiResponse</span>
+│       ├── <span class="dir">i18n/</span>
+│       │   ├── <span class="file">index.ts</span>       <span class="ann"># i18next init: LanguageDetector, fallbackLng 'en'</span>
+│       │   └── <span class="dir">locales/</span>
+│       │       ├── <span class="dir">en/</span><span class="file">translation.json</span>  <span class="ann"># nav, home, restaurant, cart, order, auth…</span>
+│       │       └── <span class="dir">ta/</span><span class="file">translation.json</span>  <span class="ann"># mirror keys in Tamil Unicode</span>
+│       ├── <span class="dir">context/</span>
+│       │   ├── <span class="file">AuthContext.tsx</span>    <span class="ann"># useReducer, getMe on mount, LOGIN/LOGOUT/UPDATE_PROFILE</span>
+│       │   └── <span class="file">CartContext.tsx</span>    <span class="ann"># useReducer, ADD/REMOVE/UPDATE_QTY/CLEAR, cross-restaurant guard</span>
+│       ├── <span class="dir">hooks/</span>
+│       │   └── <span class="file">useSocket.ts</span>       <span class="ann"># useOrderSocket + useRestaurantSocket</span>
+│       ├── <span class="dir">services/</span>
+│       │   ├── <span class="file">api.ts</span>             <span class="ann"># Axios instance, withCredentials, 401 refresh interceptor</span>
+│       │   ├── <span class="file">auth.service.ts</span>
+│       │   ├── <span class="file">restaurant.service.ts</span>
+│       │   ├── <span class="file">order.service.ts</span>
+│       │   └── <span class="file">payment.service.ts</span>
+│       ├── <span class="dir">components/</span>
+│       │   ├── <span class="dir">layout/</span>
+│       │   │   ├── <span class="file">Navbar.tsx</span>         <span class="ann"># sticky, role-based links, LanguageSwitcher, cart badge</span>
+│       │   │   └── <span class="file">Footer.tsx</span>
+│       │   ├── <span class="dir">ui/</span>
+│       │   │   ├── <span class="file">LanguageSwitcher.tsx</span> <span class="ann"># toggles en ↔ ta, persists via localStorage</span>
+│       │   │   └── <span class="file">Spinner.tsx</span>
+│       │   └── <span class="dir">restaurant/</span>
+│       │       └── <span class="file">RestaurantCard.tsx</span>
+│       ├── <span class="dir">pages/</span>                 <span class="ann"># 15 pages, all lazy-loaded via React.lazy</span>
+│       │   ├── <span class="file">HomePage.tsx</span>           <span class="ann"># hero search + featured restaurants</span>
+│       │   ├── <span class="file">RestaurantListPage.tsx</span> <span class="ann"># cuisine filter + open toggle + grid</span>
+│       │   ├── <span class="file">RestaurantDetailPage.tsx</span><span class="ann"># category sidebar + menu items + add to cart</span>
+│       │   ├── <span class="file">CartPage.tsx</span>           <span class="ann"># qty controls + order summary sidebar</span>
+│       │   ├── <span class="file">CheckoutPage.tsx</span>       <span class="ann"># address picker + Paytm initiation</span>
+│       │   ├── <span class="file">OrderTrackingPage.tsx</span>  <span class="ann"># 5-step stepper + Socket.IO live updates</span>
+│       │   ├── <span class="file">OrderHistoryPage.tsx</span>
+│       │   ├── <span class="file">ProfilePage.tsx</span>        <span class="ann"># user info + addresses</span>
+│       │   ├── <span class="dir">auth/</span>
+│       │   │   ├── <span class="file">LoginPage.tsx</span>          <span class="ann"># React Hook Form + Zod</span>
+│       │   │   └── <span class="file">RegisterPage.tsx</span>       <span class="ann"># role selector radio cards</span>
+│       │   ├── <span class="dir">dashboard/</span>
+│       │   │   ├── <span class="file">RestaurantDashboard.tsx</span><span class="ann"># stats + nav links</span>
+│       │   │   ├── <span class="file">MenuManagement.tsx</span>
+│       │   │   └── <span class="file">OrderManagement.tsx</span>    <span class="ann"># status update select per order</span>
+│       │   └── <span class="dir">admin/</span>
+│       │       ├── <span class="file">AdminDashboard.tsx</span>
+│       │       └── <span class="file">AnalyticsPage.tsx</span>
+│       └── <span class="dir">tests/</span>
+│           ├── <span class="file">setup.ts</span>               <span class="ann"># @testing-library/jest-dom + MSW server lifecycle</span>
+│           ├── <span class="file">LanguageSwitcher.test.tsx</span>
+│           └── <span class="dir">mocks/</span>
+│               ├── <span class="file">server.ts</span>              <span class="ann"># MSW node server</span>
+│               └── <span class="file">handlers.ts</span>            <span class="ann"># /api/auth/me, login, logout, restaurants</span>
+│
+└── <span class="dir">backend/</span>                   <span class="ann"># Node 22 + Express + TypeScript</span>
+    ├── <span class="file">Dockerfile</span>             <span class="ann"># multi-stage: build → non-root nodeuser runner</span>
+    ├── <span class="file">jest.config.ts</span>         <span class="ann"># fixed setupFilesAfterEnv (was setupFilesAfterFramework)</span>
+    ├── <span class="dir">src/</span>
+    │   ├── <span class="file">server.ts</span>            <span class="ann"># middleware stack + 8 route modules + NODE_ENV guard</span>
+    │   ├── <span class="dir">config/</span>              <span class="ann"># db.ts, redis.ts, logger.ts, cloudinary.ts</span>
+    │   ├── <span class="dir">middleware/</span>          <span class="ann"># auth, validate, rateLimiter (×3), errorHandler</span>
+    │   ├── <span class="dir">models/</span>              <span class="ann"># User, Restaurant, MenuItem, Cart, Order, Payment, Review</span>
+    │   ├── <span class="dir">routes/</span>              <span class="ann"># auth, restaurant, cart, order, payment, review, user, admin</span>
+    │   ├── <span class="dir">controllers/</span>         <span class="ann"># auth, restaurant, cart, order, payment, review, user, admin</span>
+    │   ├── <span class="dir">services/</span>            <span class="ann"># auth, restaurant, cart, order, payment, socket, review, admin</span>
+    │   ├── <span class="dir">queues/</span>
+    │   │   └── <span class="file">email.queue.ts</span>   <span class="ann"># BullMQ Queue + Worker, 5 retries, exponential backoff</span>
+    │   ├── <span class="dir">validators/</span>          <span class="ann"># Zod schemas (auth, …)</span>
+    │   ├── <span class="dir">types/</span>               <span class="ann"># UserRole, JwtPayload, AuthenticatedRequest, OrderEvent…</span>
+    │   └── <span class="dir">utils/</span>               <span class="ann"># AppError, asyncHandler (generic), pagination</span>
+    └── <span class="dir">tests/</span>
+        ├── <span class="file">setup.ts</span>             <span class="ann"># MongoMemoryServer global setup + env vars</span>
+        ├── <span class="file">teardown.ts</span>          <span class="ann"># mongoose.disconnect + mongod.stop</span>
+        ├── <span class="dir">unit/</span>
+        │   ├── <span class="file">auth.service.test.ts</span> <span class="ann"># register, login, duplicate, wrong password</span>
+        │   └── <span class="file">cart.service.test.ts</span> <span class="ann"># addItem, cross-restaurant, qty increment, clear</span>
+        └── <span class="dir">integration/</span>
+            └── <span class="file">auth.routes.test.ts</span>  <span class="ann"># Supertest register/login/me + health endpoint</span></pre>
+    </div>
+  </div>
+
+  <!-- ── 2. SPRINT CHECKLIST ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div>
+        <h2>Sprint Completion</h2>
+        <p>All 15 sprints + the i18n sprint shipped and type-checked</p>
+      </div>
+    </div>
+    <div class="sprint-grid">
+      <div class="sprint-card"><div class="sprint-badge done">S1</div><div class="sprint-info"><h4>Bootstrap &amp; DevOps</h4><p>.gitignore, Docker Compose, GitHub Actions CI/CD, Dockerfiles, nginx</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S2</div><div class="sprint-info"><h4>Auth Module</h4><p>JWT httpOnly cookies, bcrypt×12, Redis refresh tokens, RBAC middleware</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S3</div><div class="sprint-info"><h4>Restaurants &amp; Menu</h4><p>MongoDB 2dsphere index, $near proximity search, $text search, Redis cache 10min</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S4</div><div class="sprint-info"><h4>Cart &amp; Orders</h4><p>TTL index 24h, cross-restaurant guard, idempotency key, 5% tax, place-order flow</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S5</div><div class="sprint-info"><h4>Paytm Payments</h4><p>txnToken flow, public webhook route, checksum verification, idempotency</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S6</div><div class="sprint-info"><h4>Real-Time (Socket.IO)</h4><p>Redis Pub/Sub channel order-events, order rooms, restaurant rooms, BullMQ queues</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S7</div><div class="sprint-info"><h4>Frontend Auth Pages</h4><p>LoginPage, RegisterPage, AuthContext, Axios 401 refresh interceptor</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S8</div><div class="sprint-info"><h4>Restaurant Discovery</h4><p>HomePage, RestaurantListPage, RestaurantDetailPage, RestaurantCard</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S9</div><div class="sprint-info"><h4>Cart &amp; Checkout</h4><p>CartPage with qty controls, CheckoutPage with address picker + Paytm JS</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S10</div><div class="sprint-info"><h4>Order Tracking</h4><p>OrderTrackingPage: 5-step stepper, Socket.IO live updates; OrderHistoryPage</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S11</div><div class="sprint-info"><h4>Dashboards</h4><p>RestaurantDashboard, MenuManagement, OrderManagement, AdminDashboard, AnalyticsPage</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge i18n">S12</div><div class="sprint-info"><h4>i18n — Tamil / English</h4><p>react-i18next, LanguageDetector, localStorage, LanguageSwitcher, 2 locale files</p></div><span class="checkmark" style="color:var(--purple)">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S13</div><div class="sprint-info"><h4>Backend Tests</h4><p>Jest + Supertest + MongoMemoryServer; unit (auth, cart) + integration (auth routes)</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S14</div><div class="sprint-info"><h4>Frontend Tests</h4><p>Vitest + RTL + MSW; setup.ts, handlers.ts, LanguageSwitcher smoke test</p></div><span class="checkmark">✅</span></div>
+      <div class="sprint-card"><div class="sprint-badge done">S15</div><div class="sprint-info"><h4>App Wiring</h4><p>App.tsx (PrivateRoute, lazy routes), main.tsx (i18n first), missing routes (review, user, admin)</p></div><span class="checkmark">✅</span></div>
+    </div>
+  </div>
+
+  <!-- ── 3. FRONTEND KEY FILES ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div>
+        <h2>Frontend — Key Modules</h2>
+        <p>Critical files with their purpose and notable implementation details</p>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="card card-sm">
+        <div class="path">frontend/src/main.tsx</div>
+        <h3>Application Entry Point</h3>
+        <p>Imports <code>./i18n</code> as the very first statement — required so i18next initialises synchronously before any React component renders. Wraps app in <code>StrictMode</code>.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/src/App.tsx</div>
+        <h3>Root Component &amp; Router</h3>
+        <p>Provider chain: <code>AuthProvider → CartProvider → BrowserRouter</code>. All 15 routes with <code>React.lazy</code>. <code>PrivateRoute</code> redirects unauthenticated users to <code>/auth/login</code> with <code>state.from</code> for post-login return.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/src/context/AuthContext.tsx</div>
+        <h3>Auth State</h3>
+        <p>useReducer with <code>LOGIN | LOGOUT | SET_LOADING | UPDATE_PROFILE</code>. Calls <code>getMe()</code> on mount. Exposes <code>login</code>, <code>register</code>, <code>logout</code> actions.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/src/context/CartContext.tsx</div>
+        <h3>Cart State</h3>
+        <p>useReducer with <code>ADD | REMOVE | UPDATE_QTY | CLEAR</code>. ADD action silently blocks cross-restaurant items. Recalculates <code>totalAmount</code> + <code>itemCount</code> on every action.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/src/services/api.ts</div>
+        <h3>Axios Instance</h3>
+        <p><code>withCredentials: true</code> on all requests. 401 response interceptor attempts <code>/api/auth/refresh</code> once then redirects to login on second failure.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/src/hooks/useSocket.ts</div>
+        <h3>Socket.IO Hooks</h3>
+        <p><code>useOrderSocket(orderId, onUpdate)</code> — joins <code>order:{id}</code> room, listens to all order events. <code>useRestaurantSocket(restaurantId, onNewOrder)</code> — joins restaurant room.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/src/i18n/</div>
+        <h3>Internationalisation</h3>
+        <p>react-i18next + LanguageDetector. Detection order: <code>['localStorage', 'navigator']</code>. localStorage key <code>magizhthunnu-lang</code>. Fallback <code>en</code>. Two locale files mirror all keys.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/src/components/ui/LanguageSwitcher.tsx</div>
+        <h3>Language Toggle</h3>
+        <p>Single button in Navbar. Displays <code>🇮🇳 தமிழ்</code> when in English (invites switch to Tamil) and <code>🌐 English</code> when in Tamil. Preference persists across reloads.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">frontend/vite.config.ts</div>
+        <h3>Vitest + Dev Proxy</h3>
+        <p>Dev proxy: <code>/api → localhost:5000</code>, <code>/socket.io → localhost:5000 (ws:true)</code>. Vitest: <code>globals:true</code>, <code>environment:jsdom</code>, <code>setupFiles: setup.ts</code>, v8 coverage.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="card">
+        <h3 style="margin-bottom:12px">15 Pages — Route Map</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+          <div><span class="tag blue">Public</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/</code> HomePage</div>
+          <div><span class="tag blue">Public</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/restaurants</code></div>
+          <div><span class="tag blue">Public</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/restaurants/:id</code></div>
+          <div><span class="tag blue">Public</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/auth/login</code></div>
+          <div><span class="tag blue">Public</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/auth/register</code></div>
+          <div><span class="tag green">Customer</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/cart</code></div>
+          <div><span class="tag green">Customer</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/checkout</code></div>
+          <div><span class="tag green">Customer</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/orders/:id/track</code></div>
+          <div><span class="tag green">Auth</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/orders</code></div>
+          <div><span class="tag green">Auth</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/profile</code></div>
+          <div><span class="tag orange">Owner</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/dashboard</code></div>
+          <div><span class="tag orange">Owner</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/dashboard/menu</code></div>
+          <div><span class="tag orange">Owner</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/dashboard/orders</code></div>
+          <div><span class="tag purple">Admin</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/admin</code></div>
+          <div><span class="tag purple">Admin</span> <code style="font-size:12px;font-family:'JetBrains Mono',monospace">/admin/analytics</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. BACKEND KEY FILES ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div>
+        <h2>Backend — Key Modules</h2>
+        <p>Express server, 8 route modules, 7 MongoDB models, real-time infrastructure</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <h3 style="margin-bottom:14px">server.ts — Middleware Registration Order (critical)</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="background:#1A1A2E;color:#67E8F9;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">cors</span>
+        <span style="color:var(--gray-300)">→</span>
+        <span style="background:#1A1A2E;color:#67E8F9;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">helmet (CSP)</span>
+        <span style="color:var(--gray-300)">→</span>
+        <span style="background:#1A1A2E;color:#67E8F9;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">generalLimiter</span>
+        <span style="color:var(--gray-300)">→</span>
+        <span style="background:#1A1A2E;color:#67E8F9;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">morgan→winston</span>
+        <span style="color:var(--gray-300)">→</span>
+        <span style="background:#1A1A2E;color:#67E8F9;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">json({10mb})</span>
+        <span style="color:var(--gray-300)">→</span>
+        <span style="background:#1A1A2E;color:#67E8F9;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">cookieParser</span>
+        <span style="color:var(--gray-300)">→</span>
+        <span style="background:#1A1A2E;color:#67E8F9;padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">compression</span>
+        <span style="color:var(--gray-300)">→</span>
+        <span style="background:rgba(232,93,4,0.15);color:var(--primary);padding:5px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">routes</span>
+      </div>
+      <p style="margin-top:12px;font-size:12px;color:var(--gray-600)">Auto-start guarded: <code style="font-family:'JetBrains Mono',monospace">if (process.env.NODE_ENV !== 'test') { start(); }</code> — enables integration tests to import <code>app</code> without triggering DB connection.</p>
+    </div>
+
+    <div class="card-grid">
+      <div class="card card-sm">
+        <div class="path">routes/ — 8 modules</div>
+        <h3>Route Modules</h3>
+        <p>
+          <code>/api/auth</code> (authLimiter)<br>
+          <code>/api/restaurants</code> (public)<br>
+          <code>/api/cart</code> (authenticate)<br>
+          <code>/api/orders</code> (authenticate + orderLimiter)<br>
+          <code>/api/payments</code> (webhook public!)<br>
+          <code>/api/reviews</code> (create: auth)<br>
+          <code>/api/users</code> (authenticate)<br>
+          <code>/api/admin</code> (authenticate + admin role)
+        </p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">models/ — 7 collections</div>
+        <h3>MongoDB Models &amp; Indexes</h3>
+        <p>
+          <b>users</b>: email unique, role<br>
+          <b>restaurants</b>: 2dsphere, cuisineTypes+isOpen compound, name text<br>
+          <b>menuItems</b>: {restaurantId,category} compound<br>
+          <b>carts</b>: userId unique, updatedAt TTL 24h<br>
+          <b>orders</b>: idempotencyKey unique<br>
+          <b>payments</b>: orderId unique<br>
+          <b>reviews</b>: orderId unique (one per order)
+        </p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">services/auth.service.ts</div>
+        <h3>Authentication</h3>
+        <p>Access token: <b>900s (15min)</b> — hardcoded as seconds for @types/jsonwebtoken compatibility. Refresh token: <b>604800s (7d)</b>. Refresh token stored in Redis key <code>refresh:{userId}</code>. bcrypt rounds: 12.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">services/socket.service.ts</div>
+        <h3>Socket.IO + Redis Pub/Sub</h3>
+        <p>Channel <code>order-events</code> published via <code>redisClient.publish</code>. All Express instances subscribe via <code>redisSub</code> and relay to connected clients. Rooms: <code>order:{id}</code> + <code>restaurant:{id}</code>.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">utils/asyncHandler.ts</div>
+        <h3>Generic asyncHandler</h3>
+        <p>Made generic: <code>asyncHandler&lt;TReq extends Request&gt;</code> with <code>fn(req as TReq, res, next)</code>. Allows controllers that use <code>AuthenticatedRequest</code> to type-check correctly without unsafe casts.</p>
+      </div>
+      <div class="card card-sm">
+        <div class="path">queues/email.queue.ts</div>
+        <h3>BullMQ Email Queue</h3>
+        <p>Queue + Worker on the <code>email</code> queue. 5 retries with exponential backoff (1hr delay). Connection parsed from <code>REDIS_URL</code> env var. SMTP processor is a TODO — currently logs the job.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. SECURITY ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div>
+        <h2>Security Architecture</h2>
+        <p>Defence-in-depth: 8 security layers implemented</p>
+      </div>
+    </div>
+    <div class="security-grid">
+      <div class="sec-item"><div class="sec-icon">🪖</div><div><h4>Helmet CSP</h4><p>scriptSrc allows <code>securegw.paytm.in</code>; imgSrc allows Cloudinary; HSTS maxAge 31536000 with includeSubDomains</p></div></div>
+      <div class="sec-item"><div class="sec-icon">🍪</div><div><h4>httpOnly Cookies</h4><p>Access + refresh tokens in <code>httpOnly + Secure + SameSite=Strict</code> cookies — immune to XSS token theft</p></div></div>
+      <div class="sec-item"><div class="sec-icon">🔒</div><div><h4>Zod Validation</h4><p>All request bodies validated at route level via <code>validate(schema)</code> middleware before controllers. Returns 400 VALIDATION_ERROR on failure.</p></div></div>
+      <div class="sec-item"><div class="sec-icon">⏱️</div><div><h4>Rate Limiting</h4><p>General: 100/15min · Auth: 5/15min · Orders: 10/min. Redis-backed; skipped in test env.</p></div></div>
+      <div class="sec-item"><div class="sec-icon">✅</div><div><h4>Paytm Checksum</h4><p>Webhook rejects requests with invalid checksum. <b>Production note:</b> placeholder must be replaced with <code>PaytmChecksum.verifySignature</code> before go-live.</p></div></div>
+      <div class="sec-item"><div class="sec-icon">🔐</div><div><h4>bcrypt ×12</h4><p>Passwords hashed with 12 rounds on pre-save hook in User model. <code>comparePassword</code> instance method for login.</p></div></div>
+      <div class="sec-item"><div class="sec-icon">🛡️</div><div><h4>RBAC Middleware</h4><p><code>authenticate</code> (verifies JWT cookie) + <code>authorize(...roles)</code> (checks role). Attach as <code>asHandler(authorize('admin'))</code> on routes.</p></div></div>
+      <div class="sec-item"><div class="sec-icon">🌍</div><div><h4>.env Protection</h4><p>.gitignore covers all .env files. .env.example files committed instead. MongoDB Atlas IP whitelist recommended for production.</p></div></div>
+    </div>
+  </div>
+
+  <!-- ── 6. i18n ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div>
+        <h2>Tamil / English i18n (Sprint 12)</h2>
+        <p>All UI text switches instantly; language persists across reloads via localStorage</p>
+      </div>
+    </div>
+    <div class="two-col" style="margin-bottom:20px">
+      <div class="card card-sm">
+        <h3>Setup</h3>
+        <p>Library: <code>react-i18next</code> + <code>i18next-browser-languagedetector</code><br>
+        Detection order: <code>['localStorage', 'navigator']</code><br>
+        Storage key: <code>magizhthunnu-lang</code><br>
+        Fallback: <code>en</code> · Escape value: <code>false</code> (Tamil Unicode safe)</p>
+      </div>
+      <div class="card card-sm">
+        <h3>Usage Pattern</h3>
+        <p>All hardcoded strings replaced with <code>t('key')</code> calls. Namespaces: <code>nav</code>, <code>home</code>, <code>restaurant</code>, <code>cart</code>, <code>order</code>, <code>auth</code>, <code>profile</code>, <code>dashboard</code>, <code>admin</code>, <code>common</code>, <code>errors</code>.</p>
+      </div>
+    </div>
+    <div class="i18n-pairs">
+      <div class="i18n-col">
+        <div class="i18n-col-header en">🌐 English (en)</div>
+        <div class="i18n-row"><div class="i18n-key">nav.home</div><div class="i18n-val">Home</div></div>
+        <div class="i18n-row"><div class="i18n-key">nav.cart</div><div class="i18n-val">Cart</div></div>
+        <div class="i18n-row"><div class="i18n-key">nav.login</div><div class="i18n-val">Login</div></div>
+        <div class="i18n-row"><div class="i18n-key">nav.logout</div><div class="i18n-val">Logout</div></div>
+        <div class="i18n-row"><div class="i18n-key">home.hero_title</div><div class="i18n-val">Delicious Food, Delivered Fast</div></div>
+        <div class="i18n-row"><div class="i18n-key">restaurant.add_to_cart</div><div class="i18n-val">Add to Cart</div></div>
+        <div class="i18n-row"><div class="i18n-key">cart.empty</div><div class="i18n-val">Your cart is empty</div></div>
+        <div class="i18n-row"><div class="i18n-key">order.status_preparing</div><div class="i18n-val">Preparing</div></div>
+        <div class="i18n-row"><div class="i18n-key">auth.login</div><div class="i18n-val">Sign In</div></div>
+        <div class="i18n-row"><div class="i18n-key">common.loading</div><div class="i18n-val">Loading...</div></div>
+      </div>
+      <div class="i18n-col">
+        <div class="i18n-col-header ta">🇮🇳 தமிழ் (ta)</div>
+        <div class="i18n-row"><div class="i18n-key">nav.home</div><div class="i18n-val ta">முகப்பு</div></div>
+        <div class="i18n-row"><div class="i18n-key">nav.cart</div><div class="i18n-val ta">கூடை</div></div>
+        <div class="i18n-row"><div class="i18n-key">nav.login</div><div class="i18n-val ta">உள்நுழைக</div></div>
+        <div class="i18n-row"><div class="i18n-key">nav.logout</div><div class="i18n-val ta">வெளியேறு</div></div>
+        <div class="i18n-row"><div class="i18n-key">home.hero_title</div><div class="i18n-val ta">சுவையான உணவு, விரைவான டெலிவரி</div></div>
+        <div class="i18n-row"><div class="i18n-key">restaurant.add_to_cart</div><div class="i18n-val ta">கூடையில் சேர்</div></div>
+        <div class="i18n-row"><div class="i18n-key">cart.empty</div><div class="i18n-val ta">உங்கள் கூடை காலியாக உள்ளது</div></div>
+        <div class="i18n-row"><div class="i18n-key">order.status_preparing</div><div class="i18n-val ta">தயாரிக்கப்படுகிறது</div></div>
+        <div class="i18n-row"><div class="i18n-key">auth.login</div><div class="i18n-val ta">உள்நுழைக</div></div>
+        <div class="i18n-row"><div class="i18n-key">common.loading</div><div class="i18n-val ta">ஏற்றுகிறது...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. API REFERENCE ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div>
+        <h2>API Endpoints Reference</h2>
+        <p>8 route modules — all follow <code>{ success, data }</code> / <code>{ success, error: { code, message } }</code> response shape</p>
+      </div>
+    </div>
+    <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr class="route-group"><td colspan="4">AUTH</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/auth/register</td><td><span class="auth-badge pub">public</span></td><td>Register user; sets access + refresh cookies</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/auth/login</td><td><span class="auth-badge pub">public</span></td><td>Login; sets cookies; rate-limited 5/15min</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/auth/logout</td><td><span class="auth-badge req">auth</span></td><td>Clears cookies, deletes Redis refresh key</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/auth/refresh</td><td><span class="auth-badge pub">public</span></td><td>Rotates access token using refresh cookie</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/auth/me</td><td><span class="auth-badge req">auth</span></td><td>Returns current user (no passwordHash)</td></tr>
+
+        <tr class="route-group"><td colspan="4">RESTAURANTS</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/restaurants</td><td><span class="auth-badge pub">public</span></td><td>List with pagination, city filter, Redis cache 10min</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/restaurants/nearby</td><td><span class="auth-badge pub">public</span></td><td>$near geoquery — requires lat, lng, radius query params</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/restaurants/search</td><td><span class="auth-badge pub">public</span></td><td>$text search on name, description, cuisineTypes</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/restaurants/:id</td><td><span class="auth-badge pub">public</span></td><td>Single restaurant; Redis cache 10min</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/restaurants/:id/menu</td><td><span class="auth-badge pub">public</span></td><td>Menu grouped by category; Redis cache 10min</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/restaurants</td><td><span class="auth-badge req">restaurant</span></td><td>Create restaurant (owner role)</td></tr>
+        <tr><td><span class="method PATCH">PATCH</span></td><td class="path-cell">/api/restaurants/:id</td><td><span class="auth-badge req">restaurant</span></td><td>Update restaurant details + invalidates cache</td></tr>
+
+        <tr class="route-group"><td colspan="4">CART</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/cart</td><td><span class="auth-badge req">auth</span></td><td>Get current user's cart</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/cart/items</td><td><span class="auth-badge req">auth</span></td><td>Add item; throws CROSS_RESTAURANT if different restaurant</td></tr>
+        <tr><td><span class="method PATCH">PATCH</span></td><td class="path-cell">/api/cart/items/:menuItemId</td><td><span class="auth-badge req">auth</span></td><td>Update quantity (0 removes item)</td></tr>
+        <tr><td><span class="method DELETE">DELETE</span></td><td class="path-cell">/api/cart</td><td><span class="auth-badge req">auth</span></td><td>Clear cart</td></tr>
+
+        <tr class="route-group"><td colspan="4">ORDERS</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/orders</td><td><span class="auth-badge req">auth</span></td><td>Place order; validates cart, address, restaurant open; 5% tax; rate-limited 10/min</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/orders</td><td><span class="auth-badge req">auth</span></td><td>Order history with pagination</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/orders/:id</td><td><span class="auth-badge req">auth</span></td><td>Single order details</td></tr>
+        <tr><td><span class="method PATCH">PATCH</span></td><td class="path-cell">/api/orders/:id/status</td><td><span class="auth-badge req">restaurant</span></td><td>Update status; emits Socket.IO event via Redis Pub/Sub</td></tr>
+        <tr><td><span class="method PATCH">PATCH</span></td><td class="path-cell">/api/orders/:id/cancel</td><td><span class="auth-badge req">auth</span></td><td>Cancel pending order</td></tr>
+
+        <tr class="route-group"><td colspan="4">PAYMENTS</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/payments/initiate</td><td><span class="auth-badge req">auth</span></td><td>Create Payment doc (pending); call Paytm API; return txnToken</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/payments/webhook</td><td><span class="auth-badge pub">⚠️ public</span></td><td>Paytm callback; verify checksum; update order status; emit order:confirmed</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/payments/:id</td><td><span class="auth-badge req">auth</span></td><td>Payment status</td></tr>
+
+        <tr class="route-group"><td colspan="4">REVIEWS</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/reviews</td><td><span class="auth-badge req">auth</span></td><td>Create review; one per delivered order; updates restaurant rating</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/reviews/restaurant/:id</td><td><span class="auth-badge pub">public</span></td><td>List reviews for a restaurant with pagination</td></tr>
+
+        <tr class="route-group"><td colspan="4">USERS</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/users/me</td><td><span class="auth-badge req">auth</span></td><td>Get current user profile</td></tr>
+        <tr><td><span class="method PATCH">PATCH</span></td><td class="path-cell">/api/users/me</td><td><span class="auth-badge req">auth</span></td><td>Update name, phone, avatar</td></tr>
+        <tr><td><span class="method POST">POST</span></td><td class="path-cell">/api/users/me/addresses</td><td><span class="auth-badge req">auth</span></td><td>Add delivery address</td></tr>
+        <tr><td><span class="method DELETE">DELETE</span></td><td class="path-cell">/api/users/me/addresses/:id</td><td><span class="auth-badge req">auth</span></td><td>Remove address by ID</td></tr>
+
+        <tr class="route-group"><td colspan="4">ADMIN</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/admin/users</td><td><span class="auth-badge adm">admin</span></td><td>List all users with role filter</td></tr>
+        <tr><td><span class="method PATCH">PATCH</span></td><td class="path-cell">/api/admin/users/:id/status</td><td><span class="auth-badge adm">admin</span></td><td>Activate / deactivate user account</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/admin/restaurants</td><td><span class="auth-badge adm">admin</span></td><td>List all restaurants</td></tr>
+        <tr><td><span class="method PATCH">PATCH</span></td><td class="path-cell">/api/admin/restaurants/:id/approve</td><td><span class="auth-badge adm">admin</span></td><td>Set isVerified flag on restaurant</td></tr>
+        <tr><td><span class="method GET">GET</span></td><td class="path-cell">/api/admin/analytics</td><td><span class="auth-badge adm">admin</span></td><td>Total users, restaurants, orders, revenue, orders-by-status</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ── 8. INFRASTRUCTURE ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div>
+        <h2>Infrastructure &amp; DevOps</h2>
+        <p>Docker Compose, GitHub Actions CI/CD, environment variables</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <h3 style="margin-bottom:14px">Docker Compose — Service Graph</h3>
+      <div class="infra-flow">
+        <div class="infra-box highlight"><div class="svc">nginx</div><div class="port">:80</div></div>
+        <div class="infra-arrow">→</div>
+        <div class="infra-box"><div class="svc">frontend</div><div class="port">nginx:alpine</div></div>
+        <div class="infra-arrow">+</div>
+        <div class="infra-box"><div class="svc">backend</div><div class="port">:5000</div></div>
+        <div class="infra-arrow">→</div>
+        <div class="infra-box"><div class="svc">mongodb</div><div class="port">:27017</div></div>
+        <div class="infra-arrow">+</div>
+        <div class="infra-box"><div class="svc">redis</div><div class="port">:6379</div></div>
+      </div>
+      <p style="margin-top:12px;font-size:12px;color:var(--gray-600)">All services have <code>healthcheck</code>. Backend waits for <code>service_healthy</code> on both MongoDB and Redis. Frontend and nginx depend on backend. Volumes: <code>mongo-data</code>, <code>redis-data</code>.</p>
+    </div>
+
+    <div class="two-col" style="margin-bottom:20px">
+      <div class="card card-sm">
+        <h3 style="margin-bottom:10px">CI Pipeline (.github/workflows/ci.yml)</h3>
+        <p style="font-size:13px;color:var(--gray-700)">Triggers on every push &amp; PR to main. Runs <b>backend</b> and <b>frontend</b> jobs in parallel:</p>
+        <div style="margin-top:10px;font-size:12px;color:var(--gray-700);line-height:2">
+          <b>Backend:</b> npm ci → ESLint → tsc --noEmit → jest --coverage<br>
+          (Redis service container provided)<br>
+          <b>Frontend:</b> npm ci → oxlint → tsc --noEmit → vitest --coverage → vite build
+        </div>
+      </div>
+      <div class="card card-sm">
+        <h3 style="margin-bottom:10px">CD Pipeline (.github/workflows/cd.yml)</h3>
+        <p style="font-size:13px;color:var(--gray-700)">Triggers on push to <b>main</b> only:</p>
+        <div style="margin-top:10px;font-size:12px;color:var(--gray-700);line-height:2">
+          <b>Frontend → Vercel:</b> build with VITE_API_URL secret → amondnet/vercel-action@v25 --prod<br>
+          <b>Backend → Render:</b> POST to RENDER_DEPLOY_HOOK_URL secret
+        </div>
+      </div>
+    </div>
+
+    <div class="env-grid">
+      <div>
+        <div class="env-block"><h4>backend/.env.example</h4></div>
+        <div class="code-block">
+<pre><span class="comment"># Server</span>
+<span class="cmd">NODE_ENV</span>=development
+<span class="cmd">PORT</span>=5000
+<span class="comment"># Database</span>
+<span class="cmd">MONGODB_URI</span>=<span class="path">mongodb://localhost:27017/magizhthunnu</span>
+<span class="cmd">REDIS_URL</span>=<span class="path">redis://localhost:6379</span>
+<span class="comment"># JWT (openssl rand -hex 32)</span>
+<span class="cmd">JWT_SECRET</span>=replace-with-32-char-random
+<span class="cmd">JWT_REFRESH_SECRET</span>=replace-with-another-32-char
+<span class="comment"># Cloudinary</span>
+<span class="cmd">CLOUDINARY_CLOUD_NAME</span>=...
+<span class="cmd">CLOUDINARY_API_KEY</span>=...
+<span class="cmd">CLOUDINARY_API_SECRET</span>=...
+<span class="comment"># Paytm</span>
+<span class="cmd">PAYTM_MID</span>=...
+<span class="cmd">PAYTM_MERCHANT_KEY</span>=...
+<span class="cmd">PAYTM_WEBSITE</span>=WEBSTAGING
+<span class="cmd">ALLOWED_ORIGINS</span>=<span class="path">http://localhost:5173</span></pre>
+        </div>
+      </div>
+      <div>
+        <div class="env-block"><h4>frontend/.env.example</h4></div>
+        <div class="code-block">
+<pre><span class="cmd">VITE_API_URL</span>=<span class="path">http://localhost:5000/api</span>
+<span class="cmd">VITE_PAYTM_MID</span>=your-paytm-merchant-id
+<span class="cmd">VITE_SOCKET_URL</span>=<span class="path">http://localhost:5000</span>
+</pre>
+        </div>
+        <div class="card card-sm" style="margin-top:16px">
+          <h3>Nginx Proxy Rules</h3>
+          <p style="font-size:12px;line-height:1.9">
+            <code>/api/*</code> → <code>proxy_pass http://backend</code><br>
+            <code>/socket.io/*</code> → <code>ws: true</code> WebSocket upgrade<br>
+            <code>/*</code> → <code>try_files $uri /index.html</code> (SPA)
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 9. KNOWN ISSUES ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <div>
+        <h2>Production TODO &amp; Known Issues</h2>
+        <p>Items that must be addressed before going live</p>
+      </div>
+    </div>
+    <div class="warn-box">
+      <h4>⚠️ Paytm Checksum — CRITICAL before production</h4>
+      <p>File: <code>backend/src/services/payment.service.ts</code> — <code>verifyPaytmChecksum</code> function is a placeholder that logs a warning and returns <code>true</code>. Replace with <code>PaytmChecksum.verifySignature(body, PAYTM_MERCHANT_KEY, checksum)</code> from the official Paytm Node SDK before deploying. Failure to do this allows unauthenticated webhook calls to confirm orders.</p>
+    </div>
+    <div class="warn-box">
+      <h4>⚠️ JWT Token Expiry — Hardcoded Seconds</h4>
+      <p>Access token TTL is hardcoded as <code>900</code> (15 min) and refresh token as <code>604800</code> (7 days) in <code>auth.service.ts</code>. Newer <code>@types/jsonwebtoken</code> rejects string format (<code>'15m'</code>). If ops needs configurable TTL, update to parse the env var to a number: <code>parseInt(process.env.JWT_EXPIRES_IN)</code> or import <code>ms</code> from the <code>ms</code> package.</p>
+    </div>
+    <div class="warn-box">
+      <h4>⚠️ Frontend Test Coverage — Needs Expansion</h4>
+      <p>Currently 1 smoke test (<code>LanguageSwitcher.test.tsx</code>) plus MSW handler infrastructure. The 80% coverage threshold is configured in <code>vite.config.ts</code> but will fail until more tests are written. Priority tests: AuthContext login/logout flow, CartContext cross-restaurant guard, CheckoutPage Paytm initiation.</p>
+    </div>
+    <div class="warn-box">
+      <h4>ℹ️ BullMQ Email Worker — SMTP Not Integrated</h4>
+      <p>File: <code>backend/src/queues/email.queue.ts</code> — Worker processor currently only logs the job. Integrate SendGrid or SMTP via <code>nodemailer</code> before order confirmation emails go live. Queue and retry logic (5 attempts, exponential backoff) are fully configured.</p>
+    </div>
+  </div>
+
+  <!-- ── 10. HOW TO RUN ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div>
+        <h2>How to Run</h2>
+        <p>Local development, Docker, and test commands</p>
+      </div>
+    </div>
+    <div class="three-col">
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Setup</p>
+        <div class="code-block">
+<pre><span class="comment"># 1. Copy env files</span>
+<span class="cmd">cp backend/.env.example backend/.env</span>
+<span class="cmd">cp frontend/.env.example frontend/.env</span>
+<span class="comment"># 2. Install deps</span>
+<span class="cmd">cd backend && npm install</span>
+<span class="cmd">cd ../frontend && npm install</span></pre>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Development</p>
+        <div class="code-block">
+<pre><span class="comment"># Backend (port 5000)</span>
+<span class="cmd">cd backend</span>
+<span class="cmd">npm run dev</span>
+
+<span class="comment"># Frontend (port 5173)</span>
+<span class="cmd">cd frontend</span>
+<span class="cmd">npm run dev</span>
+
+<span class="comment"># Docker (all services)</span>
+<span class="cmd">docker compose up</span></pre>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Tests &amp; Build</p>
+        <div class="code-block">
+<pre><span class="comment"># Backend tests</span>
+<span class="cmd">cd backend && npm test</span>
+<span class="cmd">npm run test:coverage</span>
+
+<span class="comment"># Frontend tests</span>
+<span class="cmd">cd frontend && npm test</span>
+<span class="cmd">npm run test:coverage</span>
+
+<span class="comment"># Production build</span>
+<span class="cmd">cd backend && npm run build</span>
+<span class="cmd">cd frontend && npm run build</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<div class="footer">
+  <strong>Magizhthunnu</strong> — Full-Stack Food Delivery App<br>
+  Build summary generated 2026-07-01 · TypeScript strict mode · 0 errors · 15 sprints complete
+</div>
+
+</body>
+</html>

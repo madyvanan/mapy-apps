@@ -1,0 +1,45 @@
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+backend/.env
+backend/.env.local
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build outputs
+dist/
+frontend/dist/
+backend/dist/
+
+# Logs
+*.log
+logs/
+frontend/logs/
+backend/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Test coverage
+coverage/
+frontend/coverage/
+backend/coverage/
+
+# Temporary files
+*.tmp
+*.swp
+
+# Docker volumes (local)
+mongo-data/
+redis-data/

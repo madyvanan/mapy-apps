@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magizhthunnu - Implementation Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --primary: #E85D04;
+    --primary-dark: #C44D02;
+    --primary-light: #FFF3E8;
+    --secondary: #1A1A2E;
+    --accent: #16213E;
+    --success: #0F9B58;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --info: #3B82F6;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --text: #1F2937;
+    --border: #E5E7EB;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; color:var(--text); background:#fff; font-size:14px; line-height:1.6; }
+
+  /* COVER */
+  .cover {
+    min-height:100vh; background:linear-gradient(135deg,#1A1A2E 0%,#16213E 40%,#0F3460 100%);
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; padding:60px 40px; page-break-after:always;
+    position:relative; overflow:hidden;
+  }
+  .cover::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background:radial-gradient(circle at 30% 70%, rgba(232,93,4,0.15) 0%, transparent 50%),
+               radial-gradient(circle at 70% 30%, rgba(59,130,246,0.1) 0%, transparent 50%);
+  }
+  .cover-badge {
+    background:rgba(232,93,4,0.2); border:1px solid rgba(232,93,4,0.4);
+    color:#FF8C42; padding:6px 20px; border-radius:20px; font-size:12px;
+    font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-bottom:24px; position:relative; z-index:1;
+  }
+  .cover h1 { font-size:72px; font-weight:800; color:#fff; letter-spacing:-2px; line-height:1; margin-bottom:12px; position:relative; z-index:1; }
+  .cover h1 span { color:var(--primary); }
+  .cover-tagline { font-size:20px; color:rgba(255,255,255,0.7); margin-bottom:12px; font-weight:300; position:relative; z-index:1; }
+  .cover-sub { font-size:15px; color:rgba(255,255,255,0.5); margin-bottom:48px; position:relative; z-index:1; }
+  .cover-divider { width:60px; height:3px; background:var(--primary); margin:0 auto 48px; border-radius:2px; position:relative; z-index:1; }
+  .cover-meta { display:flex; gap:40px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1; }
+  .cover-meta-item { text-align:center; }
+  .cover-meta-item .label { font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .cover-meta-item .value { font-size:15px; color:rgba(255,255,255,0.9); font-weight:500; }
+  .cover-stack { margin-top:60px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; position:relative; z-index:1; }
+  .stack-chip {
+    background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+    color:rgba(255,255,255,0.75); padding:5px 14px; border-radius:6px; font-size:12px; font-weight:500;
+  }
+
+  /* LAYOUT */
+  .page { max-width:1100px; margin:0 auto; padding:60px 48px; }
+  .page-break { page-break-before:always; }
+
+  /* SECTION HEADERS */
+  .section-header { margin-bottom:40px; }
+  .section-number { font-size:11px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+  .section-title { font-size:32px; font-weight:800; color:var(--gray-900); letter-spacing:-0.5px; line-height:1.2; }
+  .section-subtitle { font-size:15px; color:var(--gray-600); margin-top:8px; }
+  .section-divider { width:40px; height:3px; background:var(--primary); border-radius:2px; margin-top:16px; }
+
+  h2.section { font-size:22px; font-weight:700; color:var(--gray-900); margin:40px 0 16px; padding-bottom:10px; border-bottom:2px solid var(--border); }
+  h3.sub { font-size:16px; font-weight:600; color:var(--gray-800); margin:28px 0 12px; }
+
+  p { margin-bottom:12px; color:var(--gray-700); }
+
+  /* TABLES */
+  .table-wrap { overflow-x:auto; margin:20px 0; border-radius:10px; border:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead tr { background:var(--gray-900); }
+  thead th { padding:12px 16px; text-align:left; color:#fff; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
+  tbody tr { border-bottom:1px solid var(--gray-100); transition:background 0.15s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:var(--gray-50); }
+  tbody td { padding:11px 16px; color:var(--gray-700); vertical-align:top; }
+  tbody td:first-child { font-weight:500; color:var(--gray-900); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .badge-green { background:#D1FAE5; color:#065F46; }
+  .badge-blue { background:#DBEAFE; color:#1E40AF; }
+  .badge-orange { background:#FEF3C7; color:#92400E; }
+  .badge-purple { background:#EDE9FE; color:#5B21B6; }
+  .badge-red { background:#FEE2E2; color:#991B1B; }
+  .badge-gray { background:#F3F4F6; color:#374151; }
+  .badge-teal { background:#CCFBF1; color:#0F766E; }
+
+  /* CODE */
+  pre { background:var(--gray-900); color:#E2E8F0; padding:20px 24px; border-radius:10px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.7; margin:16px 0; }
+  pre .comment { color:#64748B; }
+  pre .key { color:#93C5FD; }
+  pre .string { color:#86EFAC; }
+  pre .type { color:#FCA5A5; }
+  code { font-family:'JetBrains Mono',monospace; background:var(--gray-100); padding:2px 6px; border-radius:4px; font-size:12px; color:var(--primary-dark); }
+
+  /* CARDS */
+  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:24px; margin:16px 0; }
+  .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:20px 0; }
+  .card-grid-3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin:20px 0; }
+  .card-title { font-size:14px; font-weight:700; color:var(--gray-900); margin-bottom:8px; }
+  .card-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px; }
+
+  /* INFO BOXES */
+  .info-box { display:flex; gap:14px; padding:16px 20px; border-radius:10px; margin:16px 0; }
+  .info-box.decision { background:#FFF3E8; border-left:4px solid var(--primary); }
+  .info-box.note { background:#EFF6FF; border-left:4px solid var(--info); }
+  .info-box.warning { background:#FFFBEB; border-left:4px solid var(--warning); }
+  .info-box.success { background:#F0FDF4; border-left:4px solid var(--success); }
+  .info-box.feature { background:#F5F3FF; border-left:4px solid #7C3AED; }
+  .info-box-icon { font-size:20px; flex-shrink:0; }
+  .info-box-title { font-weight:700; font-size:13px; margin-bottom:4px; }
+  .info-box.decision .info-box-title { color:var(--primary-dark); }
+  .info-box.note .info-box-title { color:var(--info); }
+  .info-box.feature .info-box-title { color:#5B21B6; }
+
+  /* LISTS */
+  ul.styled, ol.styled { padding-left:20px; margin:12px 0; }
+  ul.styled li, ol.styled li { margin-bottom:8px; color:var(--gray-700); }
+  ul.styled li::marker { color:var(--primary); }
+
+  /* TOC */
+  .toc { background:var(--gray-50); border:1px solid var(--border); border-radius:12px; padding:32px 40px; margin:40px 0; }
+  .toc h2 { font-size:18px; font-weight:700; margin-bottom:20px; color:var(--gray-900); }
+  .toc-list { display:grid; grid-template-columns:1fr 1fr; gap:4px 40px; }
+  .toc-item { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px dotted var(--gray-200); }
+  .toc-num { font-size:12px; font-weight:700; color:var(--primary); width:24px; flex-shrink:0; }
+  .toc-text { font-size:13px; color:var(--gray-700); }
+
+  /* SPRINT TIMELINE */
+  .sprint-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin:20px 0; }
+  .sprint-card {
+    border:1px solid var(--border); border-radius:12px; padding:20px;
+    border-left:4px solid var(--primary);
+  }
+  .sprint-card.done { border-left-color:var(--success); background:#F0FDF4; }
+  .sprint-card.feature { border-left-color:#7C3AED; background:#F5F3FF; }
+  .sprint-num { font-size:11px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .sprint-title { font-size:14px; font-weight:700; color:var(--gray-900); margin-bottom:8px; }
+  .sprint-items { font-size:12px; color:var(--gray-600); }
+  .sprint-items li { margin-bottom:3px; }
+
+  /* FLOW STEPS */
+  .flow-steps { display:flex; flex-direction:column; gap:0; margin:20px 0; }
+  .flow-step { display:flex; gap:16px; align-items:flex-start; }
+  .flow-step-num { width:32px; height:32px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+  .flow-step-content { padding-bottom:20px; border-left:2px solid var(--border); padding-left:16px; flex:1; }
+  .flow-step:last-child .flow-step-content { border-left:none; }
+  .flow-step-title { font-weight:600; color:var(--gray-900); margin-bottom:4px; }
+  .flow-step-desc { font-size:13px; color:var(--gray-600); }
+
+  /* TREE */
+  .tree { font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.8; background:var(--gray-900); color:#E2E8F0; padding:24px 28px; border-radius:12px; margin:16px 0; }
+  .tree .dir { color:#93C5FD; font-weight:600; }
+  .tree .file { color:#A7F3D0; }
+  .tree .comment { color:#64748B; font-style:italic; }
+  .tree .new { color:#FCD34D; font-weight:600; }
+
+  /* HIGHLIGHT BOX */
+  .highlight-box {
+    background: linear-gradient(135deg, #7C3AED15, #E85D0415);
+    border: 1px solid #7C3AED30;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 20px 0;
+  }
+  .highlight-box h3 { color: #5B21B6; margin-bottom: 12px; font-size: 16px; }
+
+  /* PRINT */
+  @media print {
+    .cover { min-height:100vh; }
+    .page-break { page-break-before:always; }
+    body { font-size:12px; }
+    table { page-break-inside:avoid; }
+  }
+  @page { margin:0.75in; size:A4; }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="cover-badge">Implementation Plan</div>
+  <h1>Magizh<span>thunnu</span></h1>
+  <p class="cover-tagline">Full-Stack Build Plan — Sprint-by-Sprint</p>
+  <p class="cover-sub">Based on System Design Document v1.0 · Includes Tamil/English i18n Feature</p>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">Sprints</div><div class="value">15</div></div>
+    <div class="cover-meta-item"><div class="label">Phases</div><div class="value">12 + i18n</div></div>
+    <div class="cover-meta-item"><div class="label">Stack</div><div class="value">MERN + TypeScript</div></div>
+    <div class="cover-meta-item"><div class="label">Languages</div><div class="value">English + தமிழ்</div></div>
+    <div class="cover-meta-item"><div class="label">Status</div><div class="value">Pending Approval</div></div>
+  </div>
+  <div class="cover-stack">
+    <span class="stack-chip">React 18</span><span class="stack-chip">TypeScript 5.3</span>
+    <span class="stack-chip">Node.js 22</span><span class="stack-chip">Express.js</span>
+    <span class="stack-chip">MongoDB Atlas</span><span class="stack-chip">Mongoose 8</span>
+    <span class="stack-chip">Redis</span><span class="stack-chip">BullMQ</span>
+    <span class="stack-chip">Socket.IO</span><span class="stack-chip">Paytm Gateway</span>
+    <span class="stack-chip">react-i18next</span><span class="stack-chip">Docker + GitHub Actions</span>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="page">
+  <div class="toc">
+    <h2>Table of Contents</h2>
+    <div class="toc-list">
+      <div class="toc-item"><span class="toc-num">Ph 0</span><span class="toc-text">Project Bootstrap</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 7</span><span class="toc-text">Frontend — Auth Pages</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 1</span><span class="toc-text">Frontend Architecture</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 8</span><span class="toc-text">Frontend — Restaurant Discovery</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 2</span><span class="toc-text">Backend Architecture</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 9</span><span class="toc-text">Frontend — Cart &amp; Checkout</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 3</span><span class="toc-text">Database Design (MongoDB)</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 10</span><span class="toc-text">Frontend — Order Tracking</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 4</span><span class="toc-text">REST API Design</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 11</span><span class="toc-text">Frontend — Dashboards</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 5</span><span class="toc-text">Auth &amp; RBAC</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 12</span><span class="toc-text">🌐 Tamil/English i18n (NEW)</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 6</span><span class="toc-text">Payments + Real-Time</span></div>
+      <div class="toc-item"><span class="toc-num">Ph 13</span><span class="toc-text">Testing + Deployment</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 0 — BOOTSTRAP -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Phase 00</div>
+    <div class="section-title">Project Bootstrap</div>
+    <div class="section-subtitle">Monorepo setup, tooling, Docker, CI skeleton</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="info-box decision">
+    <div class="info-box-icon">🏗️</div>
+    <div>
+      <div class="info-box-title">Starting Point</div>
+      The <code>magizhthunnu/</code> directory currently contains only <code>CLAUDE.md</code>, <code>generate_pdf.py</code>, and <code>docs/</code>. Everything will be built from scratch following the approved system design.
+    </div>
+  </div>
+
+  <h2 class="section">Monorepo Structure</h2>
+  <div class="tree">
+<span class="dir">magizhthunnu/</span>
+├── <span class="dir">frontend/</span>          <span class="comment"># React 18 + Vite + TypeScript (Vercel)</span>
+├── <span class="dir">backend/</span>           <span class="comment"># Node.js 22 + Express + TypeScript (Render)</span>
+├── <span class="dir">docs/</span>              <span class="comment"># System design + this plan</span>
+├── <span class="file">docker-compose.yml</span> <span class="comment"># Local dev: mongo + redis + backend + frontend + nginx</span>
+├── <span class="file">.gitignore</span>         <span class="comment"># .env, node_modules, dist</span>
+├── <span class="dir">.github/workflows/</span>
+│   ├── <span class="file">ci.yml</span>         <span class="comment"># Lint → Test → Build on PR</span>
+│   └── <span class="file">cd.yml</span>         <span class="comment"># Deploy to Vercel + Render on merge to main</span>
+└── <span class="file">CLAUDE.md</span>
+  </div>
+
+  <h2 class="section">Bootstrap Tasks</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background:#DBEAFE;">⚡</div>
+      <div class="card-title">Frontend Init</div>
+      <ul class="styled">
+        <li><code>npm create vite@latest frontend -- --template react-ts</code></li>
+        <li>Install: Tailwind CSS, React Router 6, Axios, React Hook Form, Zod</li>
+        <li>ESLint + Prettier + Husky pre-commit hook</li>
+        <li>Configure <code>tsconfig.json</code> strict mode</li>
+        <li>Create <code>frontend/.env</code> with <code>VITE_API_URL</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#D1FAE5;">🟢</div>
+      <div class="card-title">Backend Init</div>
+      <ul class="styled">
+        <li>Node.js 22 + Express + TypeScript</li>
+        <li>Install: Mongoose 8, Zod, JWT, bcrypt, Socket.IO, ioredis, BullMQ, Winston, Helmet, Morgan</li>
+        <li>ESLint + Prettier + Husky pre-commit</li>
+        <li><code>tsconfig.json</code>: <code>strict: true</code>, no <code>any</code></li>
+        <li>Create <code>backend/.env</code> with all secrets</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#FEF3C7;">🐳</div>
+      <div class="card-title">Docker Compose</div>
+      <ul class="styled">
+        <li><code>mongodb:7</code> — port 27017</li>
+        <li><code>redis:7-alpine</code> — port 6379</li>
+        <li><code>backend</code> — port 5000 (hot reload)</li>
+        <li><code>frontend</code> — port 5173 (hot reload)</li>
+        <li><code>nginx:alpine</code> — ports 80 / 443</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#EDE9FE;">🔄</div>
+      <div class="card-title">GitHub Actions CI</div>
+      <ul class="styled">
+        <li>Trigger: push to any branch / PR</li>
+        <li>Steps: ESLint → tsc check → Jest → Vitest → Docker build</li>
+        <li>Blocks PR merge if any step fails</li>
+        <li>CD: on merge to <code>main</code> → deploy Vercel + Render</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 1+2 — ARCHITECTURE -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Phase 01 + 02</div>
+    <div class="section-title">Frontend & Backend Architecture</div>
+    <div class="section-subtitle">Component hierarchy, middleware pipeline, module structure</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <h2 class="section">Frontend — 15 Pages Across 4 Route Guards</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Page</th><th>Route</th><th>Guard</th><th>Key Responsibility</th></tr></thead>
+      <tbody>
+        <tr><td>HomePage</td><td>/</td><td><span class="badge badge-green">Public</span></td><td>Hero, featured restaurants, search, cuisine filter</td></tr>
+        <tr><td>RestaurantListPage</td><td>/restaurants</td><td><span class="badge badge-green">Public</span></td><td>Filter by cuisine / rating / open, map view</td></tr>
+        <tr><td>RestaurantDetailPage</td><td>/restaurants/:id</td><td><span class="badge badge-green">Public</span></td><td>Menu grouped by category, add to cart</td></tr>
+        <tr><td>LoginPage</td><td>/auth/login</td><td><span class="badge badge-green">Public</span></td><td>Email + password, redirect post-login</td></tr>
+        <tr><td>RegisterPage</td><td>/auth/register</td><td><span class="badge badge-green">Public</span></td><td>Role selection (Customer / Owner), Zod validation</td></tr>
+        <tr><td>CartPage</td><td>/cart</td><td><span class="badge badge-blue">Customer</span></td><td>Edit quantities, remove items, proceed to checkout</td></tr>
+        <tr><td>CheckoutPage</td><td>/checkout</td><td><span class="badge badge-blue">Customer</span></td><td>Address selection, order summary, Paytm pay</td></tr>
+        <tr><td>OrderTrackingPage</td><td>/orders/:id/track</td><td><span class="badge badge-blue">Customer</span></td><td>Live status via Socket.IO events</td></tr>
+        <tr><td>OrderHistoryPage</td><td>/orders</td><td><span class="badge badge-blue">Customer</span></td><td>Past orders, reorder, leave review</td></tr>
+        <tr><td>ProfilePage</td><td>/profile</td><td><span class="badge badge-blue">Customer</span></td><td>Edit profile, manage saved addresses</td></tr>
+        <tr><td>RestaurantDashboard</td><td>/dashboard</td><td><span class="badge badge-orange">Owner</span></td><td>Today's orders, revenue, open/close toggle</td></tr>
+        <tr><td>MenuManagement</td><td>/dashboard/menu</td><td><span class="badge badge-orange">Owner</span></td><td>CRUD menu items, image upload to Cloudinary</td></tr>
+        <tr><td>OrderManagement</td><td>/dashboard/orders</td><td><span class="badge badge-orange">Owner</span></td><td>Incoming orders, update status</td></tr>
+        <tr><td>AdminDashboard</td><td>/admin</td><td><span class="badge badge-red">Admin</span></td><td>User/restaurant management, verify listings</td></tr>
+        <tr><td>AnalyticsPage</td><td>/admin/analytics</td><td><span class="badge badge-red">Admin</span></td><td>Revenue, orders, active users stats</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Frontend State Management</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">AuthContext</div>
+      <pre><span class="key">interface</span> <span class="type">AuthState</span> {
+  user: <span class="type">User</span> | <span class="key">null</span>;
+  isLoading: <span class="key">boolean</span>;
+  isAuthenticated: <span class="key">boolean</span>;
+}
+<span class="comment">// Actions: LOGIN | LOGOUT | UPDATE_PROFILE</span></pre>
+    </div>
+    <div class="card">
+      <div class="card-title">CartContext</div>
+      <pre><span class="key">interface</span> <span class="type">CartState</span> {
+  items: <span class="type">CartItem</span>[];
+  restaurantId: <span class="key">string</span> | <span class="key">null</span>;
+  totalAmount: <span class="key">number</span>;
+  itemCount: <span class="key">number</span>;
+}
+<span class="comment">// Actions: ADD | REMOVE | UPDATE_QTY | CLEAR</span></pre>
+    </div>
+  </div>
+
+  <h2 class="section">Backend Middleware Pipeline (server.ts)</h2>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">CORS</div>
+        <div class="flow-step-desc">Whitelist origins from <code>ALLOWED_ORIGINS</code> env, credentials: true</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Helmet</div>
+        <div class="flow-step-desc">CSP allowing Paytm + Cloudinary; HSTS; X-Frame-Options deny</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Rate Limiter (Redis-backed)</div>
+        <div class="flow-step-desc">100 req/15min general · 5 req/15min auth · 10 req/min orders</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Morgan → Winston Logger</div>
+        <div class="flow-step-desc">Structured request logging with correlation IDs</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">5</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Body Parser + Cookie Parser</div>
+        <div class="flow-step-desc"><code>express.json({ limit: '10mb' })</code> + <code>cookieParser()</code></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">6</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Route Modules</div>
+        <div class="flow-step-desc">auth · users · restaurants · menu · cart · orders · payments · reviews · admin</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">7</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Global Error Handler</div>
+        <div class="flow-step-desc">AppError class → consistent JSON error response shape</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 3 — DATABASE -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Phase 03</div>
+    <div class="section-title">Database Design</div>
+    <div class="section-subtitle">MongoDB Atlas · Mongoose 8 · 7 collections with indexing strategy</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Collection</th><th>Key Fields</th><th>Special Index</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>users</td>
+          <td>email, role, addresses[], passwordHash</td>
+          <td>email (unique)</td>
+          <td>passwordHash: select:false, bcrypt rounds 12</td>
+        </tr>
+        <tr>
+          <td>restaurants</td>
+          <td>ownerId, cuisineTypes, address.location, isOpen, rating</td>
+          <td>address.location (2dsphere), name (text), {cuisineTypes, isOpen} compound</td>
+          <td>GeoJSON Point for geo-proximity queries</td>
+        </tr>
+        <tr>
+          <td>menuItems</td>
+          <td>restaurantId, category, price, isVeg, isAvailable, customizations[]</td>
+          <td>{restaurantId, category} compound</td>
+          <td>Flexible schema for customizations (size, toppings)</td>
+        </tr>
+        <tr>
+          <td>carts</td>
+          <td>userId (unique), restaurantId, items[], totalAmount</td>
+          <td>userId (unique), updatedAt (TTL 24h)</td>
+          <td>TTL index auto-deletes abandoned carts after 24 hours</td>
+        </tr>
+        <tr>
+          <td>orders</td>
+          <td>userId, restaurantId, status, paymentStatus, idempotencyKey</td>
+          <td>idempotencyKey (unique), {userId, createdAt} compound</td>
+          <td>Shard key: userId (hashed) for horizontal scale</td>
+        </tr>
+        <tr>
+          <td>payments</td>
+          <td>orderId, amount, gateway, gatewayPaymentId, idempotencyKey, status</td>
+          <td>orderId (unique), idempotencyKey (unique)</td>
+          <td>Raw Paytm response stored in metadata field</td>
+        </tr>
+        <tr>
+          <td>reviews</td>
+          <td>userId, restaurantId, orderId, rating, comment, images[]</td>
+          <td>orderId (unique) — one review per order</td>
+          <td>helpfulCount for community ranking</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="info-box note">
+    <div class="info-box-icon">💡</div>
+    <div>
+      <div class="info-box-title">MongoDB over PostgreSQL — Why</div>
+      Menu items vary wildly across restaurants (flexible schema). Nested documents map naturally to cart items, order line items, and embedded delivery addresses. TTL indexes handle cart expiry natively. Horizontal sharding on userId for orders scale. PostgreSQL would win for strict financial auditing — MongoDB wins here for agility and schema flexibility.
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 4+5 — API + AUTH -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Phase 04 + 05</div>
+    <div class="section-title">REST API Design & Authentication</div>
+    <div class="section-subtitle">All endpoints · JWT/RBAC · HTTP-only cookies</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <h2 class="section">API Endpoint Groups</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Group</th><th>Base Path</th><th>Methods</th><th>Auth</th></tr></thead>
+      <tbody>
+        <tr><td>Auth</td><td>/api/auth</td><td>register, login, logout, refresh, /me</td><td>Public / JWT</td></tr>
+        <tr><td>Restaurants</td><td>/api/restaurants</td><td>list, nearby, search, detail, CRUD, toggle-open</td><td>Public / Owner / Admin</td></tr>
+        <tr><td>Menu</td><td>/api/restaurants/:id/menu</td><td>GET list, POST item, PATCH item, DELETE item</td><td>Public / Owner</td></tr>
+        <tr><td>Cart</td><td>/api/cart</td><td>GET, add item, update qty, remove item, clear</td><td>Customer</td></tr>
+        <tr><td>Orders</td><td>/api/orders</td><td>place, my orders, detail, update status, cancel</td><td>Customer / Owner / Admin</td></tr>
+        <tr><td>Payments</td><td>/api/payments</td><td>initiate, webhook (public + checksum), status</td><td>Customer / Paytm Signature</td></tr>
+        <tr><td>Reviews</td><td>/api/reviews</td><td>submit, list by restaurant</td><td>Customer / Public</td></tr>
+        <tr><td>Admin</td><td>/api/admin</td><td>users list, restaurants list, verify, analytics</td><td>Admin only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Standard Response Format</h2>
+  <pre><span class="comment">// Success</span>
+{ <span class="key">"success"</span>: <span class="key">true</span>, <span class="key">"data"</span>: { ... }, <span class="key">"message"</span>: <span class="string">"Order placed"</span> }
+
+<span class="comment">// Paginated</span>
+{ <span class="key">"success"</span>: <span class="key">true</span>, <span class="key">"data"</span>: [...], <span class="key">"pagination"</span>: { <span class="key">"page"</span>: 1, <span class="key">"limit"</span>: 20, <span class="key">"total"</span>: 150 } }
+
+<span class="comment">// Error</span>
+{ <span class="key">"success"</span>: <span class="key">false</span>, <span class="key">"error"</span>: { <span class="key">"code"</span>: <span class="string">"VALIDATION_ERROR"</span>, <span class="key">"message"</span>: <span class="string">"Email is required"</span> } }</pre>
+
+  <h2 class="section">JWT Authentication Flow</h2>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Login → Issue Tokens</div>
+        <div class="flow-step-desc">bcrypt.compare → sign accessToken (15min) + refreshToken (7d) → store refreshToken in Redis</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Set HTTP-only Cookie</div>
+        <div class="flow-step-desc"><code>Set-Cookie: accessToken; httpOnly; Secure; SameSite=Strict</code> — XSS cannot steal token</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Authenticate Middleware</div>
+        <div class="flow-step-desc">Read cookie → verify JWT → attach <code>req.user = { id, role }</code> → next()</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Authorize Middleware</div>
+        <div class="flow-step-desc"><code>authorize('admin', 'restaurant')</code> — returns 403 if role not in list</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">5</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Token Refresh</div>
+        <div class="flow-step-desc">POST /api/auth/refresh → validate refreshToken in Redis → issue new accessToken</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 6 — PAYMENTS + REALTIME -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Phase 06</div>
+    <div class="section-title">Payments + Real-Time Tracking</div>
+    <div class="section-subtitle">Paytm integration · Socket.IO · BullMQ · Redis Pub/Sub</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <h2 class="section">Paytm Payment Flow</h2>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Customer clicks "Pay Now"</div>
+        <div class="flow-step-desc">Frontend sends <code>POST /api/payments/initiate</code> with <code>{ orderId, idempotencyKey }</code></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Backend creates Payment doc + calls Paytm</div>
+        <div class="flow-step-desc">Status: pending → Paytm Transaction API → returns <code>txnToken</code></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Frontend renders Paytm JS Checkout</div>
+        <div class="flow-step-desc">Customer completes via UPI / Card / Wallet on Paytm's hosted page</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Paytm Webhook (most reliable path)</div>
+        <div class="flow-step-desc"><code>POST /api/payments/webhook</code> → verify checksum (CRITICAL) → update Payment + Order → emit Socket.IO → queue email</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">5</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Customer sees live tracking</div>
+        <div class="flow-step-desc">Socket.IO <code>order:confirmed</code> event navigates frontend to <code>/orders/:id/track</code></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box warning">
+    <div class="info-box-icon">⚠️</div>
+    <div>
+      <div class="info-box-title">Critical: Webhook Checksum</div>
+      The webhook route is public (no auth middleware). It MUST verify the Paytm checksum via <code>PaytmChecksum.verifySignature(body, MERCHANT_KEY, checksum)</code> before trusting any data. Never update order status based on client-side callback alone.
+    </div>
+  </div>
+
+  <h2 class="section">Real-Time Order Tracking (Socket.IO + Redis)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Direction</th><th>Room</th><th>Payload</th></tr></thead>
+      <tbody>
+        <tr><td><code>order:confirmed</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status, estimatedDelivery }</td></tr>
+        <tr><td><code>order:preparing</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status }</td></tr>
+        <tr><td><code>order:dispatched</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status, deliveryAgent }</td></tr>
+        <tr><td><code>order:delivered</code></td><td>Server → Customer</td><td>order:{orderId}</td><td>{ orderId, status }</td></tr>
+        <tr><td><code>order:new</code></td><td>Server → Restaurant</td><td>restaurant:{id}</td><td>Full order object</td></tr>
+        <tr><td><code>order:cancelled</code></td><td>Server → Both</td><td>order:{orderId}</td><td>{ orderId, reason }</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">BullMQ Job Queues</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Queue</th><th>Jobs</th><th>Retry</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td>order-processing</td><td>validateOrder, notifyRestaurant, clearCart</td><td>3 retries, exponential backoff</td><td><span class="badge badge-red">High</span></td></tr>
+        <tr><td>notification</td><td>pushNotification, smsAlert</td><td>2 retries</td><td><span class="badge badge-orange">Medium</span></td></tr>
+        <tr><td>email</td><td>orderConfirmation, passwordReset, receipt</td><td>5 retries, 1hr delay</td><td><span class="badge badge-gray">Low</span></td></tr>
+        <tr><td>analytics</td><td>updateRestaurantRating, dailyReport</td><td>1 retry</td><td><span class="badge badge-gray">Low</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PHASE 12 — i18n FEATURE (NEW) -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Phase 12 — Additional Feature</div>
+    <div class="section-title">Tamil / English Language Support</div>
+    <div class="section-subtitle">react-i18next · Toggle in Navbar · Persisted to localStorage · Default: English</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="info-box feature">
+    <div class="info-box-icon">🌐</div>
+    <div>
+      <div class="info-box-title">New Feature — Not in Original System Design</div>
+      All app UI text will switch between <strong>English</strong> (default) and <strong>Tamil (தமிழ்)</strong> based on user selection. The selected language persists across sessions via <code>localStorage</code>. No backend changes are needed — only frontend UI strings change. Restaurant/menu names stored in DB display as-is (Tamil names already render correctly in Unicode).
+    </div>
+  </div>
+
+  <h2 class="section">Implementation Strategy</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background:#EDE9FE;">📦</div>
+      <div class="card-title">Library: react-i18next</div>
+      <ul class="styled">
+        <li>Industry standard for React i18n</li>
+        <li>Built-in <code>useTranslation()</code> hook — minimal boilerplate</li>
+        <li><code>i18next-browser-languagedetector</code> for <code>localStorage</code> persistence</li>
+        <li>Zero backend changes needed</li>
+        <li>Works with TypeScript (typed keys)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#D1FAE5;">🔁</div>
+      <div class="card-title">Language Toggle UX</div>
+      <ul class="styled">
+        <li>Single toggle button in Navbar (top-right)</li>
+        <li>Shows <strong>"🇮🇳 தமிழ்"</strong> when current lang is English</li>
+        <li>Shows <strong>"🌐 English"</strong> when current lang is Tamil</li>
+        <li>Instant switch — no page reload needed</li>
+        <li>Preference saved to <code>localStorage</code> automatically</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="section">File Structure Added</h2>
+  <div class="tree">
+<span class="dir">frontend/src/</span>
+├── <span class="new">i18n/</span>                         <span class="comment"># NEW — language config</span>
+│   ├── <span class="new">index.ts</span>                  <span class="comment"># i18next init (LanguageDetector + react-i18next)</span>
+│   └── <span class="new">locales/</span>
+│       ├── <span class="new">en/</span>
+│       │   └── <span class="new">translation.json</span>  <span class="comment"># All English UI strings</span>
+│       └── <span class="new">ta/</span>
+│           └── <span class="new">translation.json</span>  <span class="comment"># All Tamil translations (Unicode)</span>
+├── <span class="dir">components/ui/</span>
+│   └── <span class="new">LanguageSwitcher.tsx</span>      <span class="comment"># Toggle button → placed in Navbar</span>
+└── <span class="file">main.tsx</span>                      <span class="comment"># Import i18n/index.ts here (before render)</span>
+  </div>
+
+  <h2 class="section">i18n Initialization</h2>
+  <pre><span class="comment">// frontend/src/i18n/index.ts</span>
+<span class="key">import</span> i18n <span class="key">from</span> <span class="string">'i18next'</span>;
+<span class="key">import</span> { initReactI18next } <span class="key">from</span> <span class="string">'react-i18next'</span>;
+<span class="key">import</span> LanguageDetector <span class="key">from</span> <span class="string">'i18next-browser-languagedetector'</span>;
+<span class="key">import</span> en <span class="key">from</span> <span class="string">'./locales/en/translation.json'</span>;
+<span class="key">import</span> ta <span class="key">from</span> <span class="string">'./locales/ta/translation.json'</span>;
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: {
+      en: { translation: en },
+      ta: { translation: ta },
+    },
+    fallbackLng: <span class="string">'en'</span>,         <span class="comment">// default language</span>
+    defaultNS: <span class="string">'translation'</span>,
+    detection: {
+      order: [<span class="string">'localStorage'</span>, <span class="string">'navigator'</span>],
+      caches: [<span class="string">'localStorage'</span>],
+    },
+    interpolation: { escapeValue: <span class="key">false</span> },
+  });
+
+<span class="key">export default</span> i18n;</pre>
+
+  <h2 class="section">Translation Keys Coverage</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Namespace</th><th>Keys</th><th>English Sample</th><th>Tamil Sample</th></tr></thead>
+      <tbody>
+        <tr><td>nav</td><td>home, restaurants, cart, orders, profile, login, logout</td><td>"Home"</td><td>"முகப்பு"</td></tr>
+        <tr><td>home</td><td>hero_title, search_placeholder, featured</td><td>"Delicious Food, Delivered Fast"</td><td>"சுவையான உணவு, விரைவாக டெலிவரி"</td></tr>
+        <tr><td>restaurant</td><td>open, closed, add_to_cart, min_order, delivery_time</td><td>"Add to Cart"</td><td>"கூடையில் சேர்"</td></tr>
+        <tr><td>cart</td><td>empty, checkout, total, remove, update_qty</td><td>"Your cart is empty"</td><td>"உங்கள் கூடை காலியாக உள்ளது"</td></tr>
+        <tr><td>order</td><td>status_pending, status_confirmed, status_preparing, status_dispatched, status_delivered</td><td>"Preparing"</td><td>"தயாரிக்கப்படுகிறது"</td></tr>
+        <tr><td>auth</td><td>email, password, login, register, logout_confirm</td><td>"Sign In"</td><td>"உள்நுழைக"</td></tr>
+        <tr><td>common</td><td>loading, error, save, cancel, back, confirm</td><td>"Loading..."</td><td>"ஏற்றுகிறது..."</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Language Switcher Component</h2>
+  <pre><span class="comment">// frontend/src/components/ui/LanguageSwitcher.tsx</span>
+<span class="key">import</span> { useTranslation } <span class="key">from</span> <span class="string">'react-i18next'</span>;
+
+<span class="key">const</span> LanguageSwitcher = () => {
+  <span class="key">const</span> { i18n } = useTranslation();
+  <span class="key">const</span> toggle = () =>
+    i18n.changeLanguage(i18n.language === <span class="string">'en'</span> ? <span class="string">'ta'</span> : <span class="string">'en'</span>);
+
+  <span class="key">return</span> (
+    &lt;button onClick={toggle}
+      className=<span class="string">"flex items-center gap-1 px-3 py-1.5 rounded-md
+                 border border-gray-200 text-sm font-medium hover:bg-gray-50"</span>&gt;
+      {i18n.language === <span class="string">'en'</span> ? <span class="string">'🇮🇳 தமிழ்'</span> : <span class="string">'🌐 English'</span>}
+    &lt;/button&gt;
+  );
+};
+
+<span class="key">export default</span> LanguageSwitcher;</pre>
+
+  <div class="info-box success">
+    <div class="info-box-icon">✅</div>
+    <div>
+      <div class="info-box-title">Zero Backend Changes</div>
+      No API changes, no new database fields, no new endpoints. All translation happens entirely in the frontend. The API remains language-agnostic. Tamil Unicode text in restaurant/menu names (stored in MongoDB) renders correctly without any changes.
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 13 — TESTING + DEPLOYMENT -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Phase 13</div>
+    <div class="section-title">Testing Strategy & Deployment</div>
+    <div class="section-subtitle">80%+ coverage · Jest + Supertest · Vitest + RTL · GitHub Actions → Vercel + Render</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <h2 class="section">Critical Test Cases</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Module</th><th>Test Case</th><th>Expected</th></tr></thead>
+      <tbody>
+        <tr><td>Auth</td><td>Register with duplicate email</td><td>400 Bad Request</td></tr>
+        <tr><td>Auth</td><td>Login with wrong password</td><td>401 Unauthorized</td></tr>
+        <tr><td>Auth</td><td>Access protected route with expired token</td><td>401 Unauthorized</td></tr>
+        <tr><td>Cart</td><td>Add items from two different restaurants</td><td>400 Bad Request</td></tr>
+        <tr><td>Orders</td><td>Place order with same idempotency key twice</td><td>409 Conflict (returns cached)</td></tr>
+        <tr><td>Orders</td><td>Place order from empty cart</td><td>400 Bad Request</td></tr>
+        <tr><td>Payments</td><td>Webhook with invalid Paytm checksum</td><td>400 Rejected</td></tr>
+        <tr><td>RBAC</td><td>Customer tries to update order status</td><td>403 Forbidden</td></tr>
+        <tr><td>RBAC</td><td>Owner accesses another owner's restaurant</td><td>403 Forbidden</td></tr>
+        <tr><td>Rate Limiting</td><td>6+ auth requests in 15 minutes from same IP</td><td>429 Too Many Requests</td></tr>
+        <tr><td>Reviews</td><td>Submit review for undelivered order</td><td>400 Bad Request</td></tr>
+        <tr><td>Reviews</td><td>Submit second review for same order</td><td>409 Conflict</td></tr>
+        <tr><td>i18n</td><td>Toggle language → all UI strings change</td><td>Tamil/English rendered correctly</td></tr>
+        <tr><td>i18n</td><td>Reload page after toggling to Tamil</td><td>Tamil persists from localStorage</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section">Deployment Pipeline</h2>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Feature branch push → PR created</div>
+        <div class="flow-step-desc">Branch naming: <code>feature/short-description</code> or <code>fix/short-description</code></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">GitHub Actions CI runs</div>
+        <div class="flow-step-desc">ESLint → tsc → Jest (backend) → Vitest (frontend) → Docker image build</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">PR review + squash merge to main</div>
+        <div class="flow-step-desc">CI must be green. Never commit directly to main.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Vercel auto-deploys frontend</div>
+        <div class="flow-step-desc">Edge CDN, HTTPS, preview deployments for every PR</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">5</div>
+      <div class="flow-step-content">
+        <div class="flow-step-title">Render auto-deploys backend</div>
+        <div class="flow-step-desc">Docker-based, connects to MongoDB Atlas + Redis Cloud</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section">Environment Variables Reference</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">backend/.env</div>
+      <ul class="styled">
+        <li><code>MONGODB_URI</code> — Atlas connection string</li>
+        <li><code>REDIS_URL</code> — Redis Cloud / Upstash URL</li>
+        <li><code>JWT_SECRET</code> — 256-bit signing secret</li>
+        <li><code>JWT_REFRESH_SECRET</code> — Separate refresh secret</li>
+        <li><code>PAYTM_MID</code> — Merchant ID</li>
+        <li><code>PAYTM_MERCHANT_KEY</code> — Never log this</li>
+        <li><code>CLOUDINARY_URL</code> — Image CDN API URL</li>
+        <li><code>ALLOWED_ORIGINS</code> — Comma-separated CORS origins</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">frontend/.env</div>
+      <ul class="styled">
+        <li><code>VITE_API_URL</code> — Backend API base URL</li>
+        <li><code>VITE_PAYTM_MID</code> — Paytm MID for JS Checkout</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SPRINT BREAKDOWN -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">Sprint Breakdown</div>
+    <div class="section-title">15 Sprints — Build Order</div>
+    <div class="section-subtitle">Sequential implementation plan from bootstrap to deployment</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="sprint-grid">
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 1</div>
+      <div class="sprint-title">Project Bootstrap</div>
+      <ul class="sprint-items">
+        <li>Vite + React + TS frontend scaffold</li>
+        <li>Node + Express + TS backend scaffold</li>
+        <li>Docker Compose (mongo, redis, nginx)</li>
+        <li>ESLint + Prettier + Husky hooks</li>
+        <li>GitHub Actions CI skeleton</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 2</div>
+      <div class="sprint-title">Backend — Auth Module</div>
+      <ul class="sprint-items">
+        <li>User model (bcrypt, email unique)</li>
+        <li>JWT issue + refresh + cookie</li>
+        <li>authenticate + authorize middleware</li>
+        <li>Auth routes: register, login, logout, /me</li>
+        <li>Redis refresh token store</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 3</div>
+      <div class="sprint-title">Backend — Restaurants + Menu</div>
+      <ul class="sprint-items">
+        <li>Restaurant model (2dsphere index)</li>
+        <li>MenuItem model (compound index)</li>
+        <li>CRUD endpoints + geo search</li>
+        <li>Full-text search by name/cuisine</li>
+        <li>Cloudinary image upload</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 4</div>
+      <div class="sprint-title">Backend — Cart + Orders</div>
+      <ul class="sprint-items">
+        <li>Cart model (TTL 24h index)</li>
+        <li>Cart: add/update/remove/clear</li>
+        <li>Order model (idempotencyKey unique)</li>
+        <li>Place order from cart</li>
+        <li>Status transitions + RBAC</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 5</div>
+      <div class="sprint-title">Backend — Payments (Paytm)</div>
+      <ul class="sprint-items">
+        <li>Payment model</li>
+        <li>Initiate: create doc + get txnToken</li>
+        <li>Webhook: checksum verify (critical)</li>
+        <li>Idempotency key dedup</li>
+        <li>Status query endpoint</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 6</div>
+      <div class="sprint-title">Backend — Socket.IO + Queues</div>
+      <ul class="sprint-items">
+        <li>Socket.IO on Express server</li>
+        <li>Redis Pub/Sub for multi-instance</li>
+        <li>Order rooms + events</li>
+        <li>BullMQ: email + notification queues</li>
+        <li>Winston structured logging</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 7</div>
+      <div class="sprint-title">Frontend — Auth Pages</div>
+      <ul class="sprint-items">
+        <li>Axios instance + interceptors</li>
+        <li>AuthContext + useAuth hook</li>
+        <li>LoginPage + RegisterPage (Zod)</li>
+        <li>Route guards (PrivateRoute)</li>
+        <li>Navbar + Footer layout</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 8</div>
+      <div class="sprint-title">Frontend — Restaurant Discovery</div>
+      <ul class="sprint-items">
+        <li>HomePage hero + search</li>
+        <li>RestaurantListPage (filter/sort)</li>
+        <li>RestaurantDetailPage + menu</li>
+        <li>RestaurantCard + MenuItemCard</li>
+        <li>useRestaurants hook</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 9</div>
+      <div class="sprint-title">Frontend — Cart + Checkout</div>
+      <ul class="sprint-items">
+        <li>CartContext + useCart hook</li>
+        <li>CartPage + CartDrawer</li>
+        <li>CheckoutPage (address + summary)</li>
+        <li>Paytm JS Checkout integration</li>
+        <li>Payment service calls</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 10</div>
+      <div class="sprint-title">Frontend — Order Tracking</div>
+      <ul class="sprint-items">
+        <li>useSocket hook (Socket.IO)</li>
+        <li>OrderTrackingPage (live status)</li>
+        <li>OrderStatusStepper component</li>
+        <li>OrderHistoryPage + reorder</li>
+        <li>Review submission flow</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 11</div>
+      <div class="sprint-title">Frontend — Dashboards</div>
+      <ul class="sprint-items">
+        <li>RestaurantDashboard (owner)</li>
+        <li>MenuManagement + image upload</li>
+        <li>OrderManagement (status update)</li>
+        <li>AdminDashboard + AnalyticsPage</li>
+        <li>User/restaurant management</li>
+      </ul>
+    </div>
+    <div class="sprint-card feature">
+      <div class="sprint-num">Sprint 12 — NEW FEATURE</div>
+      <div class="sprint-title">🌐 Tamil / English i18n</div>
+      <ul class="sprint-items">
+        <li>Install react-i18next + LanguageDetector</li>
+        <li>Create en/translation.json + ta/translation.json</li>
+        <li>Wire i18n/index.ts in main.tsx</li>
+        <li>Build LanguageSwitcher in Navbar</li>
+        <li>Replace all hardcoded strings with t('key')</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 13</div>
+      <div class="sprint-title">Backend Testing</div>
+      <ul class="sprint-items">
+        <li>Jest + Supertest setup</li>
+        <li>mongodb-memory-server</li>
+        <li>Auth, Cart, Order, Payment tests</li>
+        <li>RBAC + rate limiting tests</li>
+        <li>Target: ≥80% coverage</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 14</div>
+      <div class="sprint-title">Frontend Testing</div>
+      <ul class="sprint-items">
+        <li>Vitest + React Testing Library</li>
+        <li>MSW for API mocking</li>
+        <li>Component + hook tests</li>
+        <li>i18n toggle tests</li>
+        <li>Target: ≥80% coverage</li>
+      </ul>
+    </div>
+    <div class="sprint-card">
+      <div class="sprint-num">Sprint 15</div>
+      <div class="sprint-title">Deployment</div>
+      <ul class="sprint-items">
+        <li>Dockerfile (frontend + backend)</li>
+        <li>GitHub Actions CI/CD pipeline</li>
+        <li>Vercel deploy (frontend)</li>
+        <li>Render deploy (backend)</li>
+        <li>MongoDB Atlas + Redis Cloud setup</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="section">Verification Checklist</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>How to Verify</th></tr></thead>
+      <tbody>
+        <tr><td>🌐 Tamil/English toggle</td><td>Click toggle in Navbar → all labels, buttons, order statuses switch instantly. Reload → language persists.</td></tr>
+        <tr><td>Auth flow</td><td>Register → login → JWT cookie set. Access /cart without login → redirect to /auth/login.</td></tr>
+        <tr><td>Paytm payment</td><td>Sandbox flow: place order → pay → webhook updates order status → Socket.IO fires order:confirmed.</td></tr>
+        <tr><td>Real-time tracking</td><td>Two tabs (customer + restaurant dashboard) → restaurant updates status → customer sees it live.</td></tr>
+        <tr><td>Cart TTL</td><td>Check MongoDB TTL index auto-deletes cart documents after 24h.</td></tr>
+        <tr><td>Rate limiting</td><td>POST /api/auth/login 6x in 15min → 429 response.</td></tr>
+        <tr><td>Idempotency</td><td>POST /api/orders with same idempotencyKey twice → second returns 409 with cached result.</td></tr>
+        <tr><td>Test coverage</td><td>npm test in frontend/ and backend/ both report ≥80% coverage.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:60px; padding-top:24px; border-top:2px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <div style="font-size:18px; font-weight:800; color:var(--gray-900);">Magizh<span style="color:var(--primary);">thunnu</span></div>
+      <div style="font-size:12px; color:var(--gray-600);">Implementation Plan — June 2026</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:12px; color:var(--gray-600);">15 Sprints · MERN Stack · Tamil/English i18n</div>
+      <div style="font-size:12px; color:#7C3AED; font-weight:600;">Pending Your Approval to Proceed</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

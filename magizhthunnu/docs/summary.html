@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magizhthunnu System Design</title>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({ startOnLoad: true });
+</script>
+
+<style>
+body{
+font-family: Arial, Helvetica, sans-serif;
+margin:40px;
+line-height:1.6;
+color:#333;
+}
+
+h1,h2,h3{
+color:#0f172a;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin:20px 0;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:10px;
+text-align:left;
+}
+
+th{
+background:#f3f4f6;
+}
+
+code{
+background:#f4f4f4;
+padding:3px 6px;
+border-radius:5px;
+}
+
+pre{
+background:#f4f4f4;
+padding:15px;
+border-radius:8px;
+overflow:auto;
+}
+
+.page-break{
+page-break-after:always;
+}
+
+.cover{
+text-align:center;
+margin-top:200px;
+}
+
+.cover h1{
+font-size:48px;
+}
+
+.cover h3{
+font-weight:normal;
+}
+
+.section{
+margin-top:60px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="cover">
+<h1>Magizhthunnu</h1>
+<h3>Online Food Delivery Platform</h3>
+<p>System Design Document</p>
+<p>Version 1.0</p>
+<p>Architect & Senior Full Stack Engineer</p>
+<p>2026</p>
+</div>
+
+<div class="page-break"></div>
+
+<h1>1. Executive Summary</h1>
+
+<p>
+Magizhthunnu is a scalable online food delivery platform connecting customers with local restaurants.
+The system enables users to browse restaurants, order food, make payments, and track deliveries in real time.
+</p>
+
+<p>Primary Goals</p>
+
+<ul>
+<li>Seamless food ordering</li>
+<li>Fast restaurant discovery</li>
+<li>Secure payment processing</li>
+<li>Real-time order tracking</li>
+<li>Scalable microservice-friendly architecture</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h1>2. High Level Architecture</h1>
+
+<div class="mermaid">
+graph LR
+
+Client[React Frontend]
+API[Express API]
+DB[(MongoDB Atlas)]
+Redis[(Redis Cache)]
+Queue[(BullMQ Queue)]
+Paytm[Paytm Gateway]
+Cloudinary[Cloudinary]
+
+Client --> API
+API --> DB
+API --> Redis
+API --> Queue
+API --> Paytm
+API --> Cloudinary
+</div>
+
+<p>Architecture follows a 3-tier model</p>
+
+<ul>
+<li>Presentation Layer – React SPA</li>
+<li>Application Layer – Node.js + Express</li>
+<li>Data Layer – MongoDB + Redis</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h1>3. Technology Stack</h1>
+
+<table>
+
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Version</th>
+<th>Reason</th>
+</tr>
+
+<tr>
+<td>Frontend</td>
+<td>React + Vite</td>
+<td>18 / 5.x</td>
+<td>Fast build and hot reload</td>
+</tr>
+
+<tr>
+<td>Language</td>
+<td>TypeScript</td>
+<td>5.x</td>
+<td>Strong typing</td>
+</tr>
+
+<tr>
+<td>Styling</td>
+<td>Tailwind CSS</td>
+<td>3.x</td>
+<td>Utility based styling</td>
+</tr>
+
+<tr>
+<td>Backend</td>
+<td>Node.js + Express</td>
+<td>22 / 4.x</td>
+<td>REST APIs</td>
+</tr>
+
+<tr>
+<td>Database</td>
+<td>MongoDB Atlas</td>
+<td>7.x</td>
+<td>Flexible schema</td>
+</tr>
+
+<tr>
+<td>ORM</td>
+<td>Mongoose</td>
+<td>8.x</td>
+<td>MongoDB ODM</td>
+</tr>
+
+<tr>
+<td>Cache</td>
+<td>Redis</td>
+<td>7.x</td>
+<td>Sessions + caching</td>
+</tr>
+
+<tr>
+<td>Queue</td>
+<td>BullMQ</td>
+<td>-</td>
+<td>Async job processing</td>
+</tr>
+
+<tr>
+<td>Payment</td>
+<td>Paytm</td>
+<td>-</td>
+<td>Indian payment gateway</td>
+</tr>
+
+<tr>
+<td>Image Storage</td>
+<td>Cloudinary</td>
+<td>-</td>
+<td>CDN image hosting</td>
+</tr>
+
+</table>
+
+<div class="page-break"></div>
+
+<h1>4. Frontend Architecture</h1>
+
+<div class="mermaid">
+graph TD
+
+App --> Router
+Router --> Home
+Router --> RestaurantList
+Router --> RestaurantDetail
+Router --> CartPage
+Router --> Checkout
+Router --> Profile
+Router --> AdminDashboard
+</div>
+
+<h3>Folder Structure</h3>
+
+<pre>
+src/
+ components/
+ pages/
+ hooks/
+ services/
+ contexts/
+ utils/
+</pre>
+
+<div class="page-break"></div>
+
+<h1>5. Backend Architecture</h1>
+
+<div class="mermaid">
+graph LR
+
+Request --> Nginx
+Nginx --> Express
+Express --> Middleware
+Middleware --> Controller
+Controller --> Service
+Service --> MongoDB
+Service --> Redis
+</div>
+
+<h3>Middleware Stack</h3>
+
+<ul>
+<li>CORS</li>
+<li>Helmet</li>
+<li>Rate Limiter</li>
+<li>Auth Middleware</li>
+<li>Error Handler</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h1>6. Database Design</h1>
+
+<h3>Users Collection</h3>
+
+<pre>
+{
+_id,
+name,
+email,
+passwordHash,
+role,
+phone,
+avatar,
+addresses:[],
+createdAt,
+updatedAt
+}
+</pre>
+
+<h3>Restaurants Collection</h3>
+
+<pre>
+{
+_id,
+ownerId,
+name,
+description,
+cuisineTypes,
+rating,
+isOpen,
+deliveryFee
+}
+</pre>
+
+<h3>Orders Collection</h3>
+
+<pre>
+{
+_id,
+userId,
+restaurantId,
+items[],
+status,
+paymentStatus,
+totalAmount,
+createdAt
+}
+</pre>
+
+<h3>Payments Collection</h3>
+
+<pre>
+{
+_id,
+orderId,
+amount,
+currency,
+gateway,
+status
+}
+</pre>
+
+<div class="page-break"></div>
+
+<h1>7. API Design</h1>
+
+<h3>Authentication</h3>
+
+<pre>
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/auth/me
+</pre>
+
+<h3>Restaurants</h3>
+
+<pre>
+GET /api/restaurants
+GET /api/restaurants/:id
+GET /api/restaurants/:id/menu
+</pre>
+
+<h3>Orders</h3>
+
+<pre>
+POST /api/orders
+GET /api/orders/:id
+PATCH /api/orders/:id/status
+</pre>
+
+<div class="page-break"></div>
+
+<h1>8. Authentication Flow</h1>
+
+<div class="mermaid">
+sequenceDiagram
+
+User->>Frontend: Login
+Frontend->>Backend: POST /login
+Backend->>DB: Validate user
+Backend-->>Frontend: JWT Token
+Frontend->>Backend: API Request + Cookie
+Backend->>Middleware: Verify JWT
+Middleware->>Controller: Allow request
+</div>
+
+<div class="page-break"></div>
+
+<h1>9. Payment Architecture</h1>
+
+<div class="mermaid">
+sequenceDiagram
+
+User->>Frontend: Click Pay
+Frontend->>Backend: /payments/initiate
+Backend->>Paytm: Create Order
+Paytm-->>Frontend: Payment Page
+User->>Paytm: Pay
+Paytm->>Backend: Webhook
+Backend->>DB: Update order
+</div>
+
+<div class="page-break"></div>
+
+<h1>10. Real Time Tracking</h1>
+
+<p>Real-time updates implemented using Socket.IO</p>
+
+Events
+
+<ul>
+<li>order_confirmed</li>
+<li>order_preparing</li>
+<li>order_dispatched</li>
+<li>order_delivered</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h1>11. Security</h1>
+
+<ul>
+<li>HTTPS enforced</li>
+<li>Helmet headers</li>
+<li>JWT authentication</li>
+<li>bcrypt password hashing</li>
+<li>Rate limiting</li>
+<li>Input validation with Zod</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h1>12. Deployment Architecture</h1>
+
+<div class="mermaid">
+graph LR
+
+GitHub --> CI
+CI --> Docker
+Docker --> Vercel
+Docker --> Render
+Render --> MongoDB
+Render --> Redis
+</div>
+
+<div class="page-break"></div>
+
+<h1>13. Scalability</h1>
+
+<ul>
+<li>Redis caching</li>
+<li>BullMQ background jobs</li>
+<li>MongoDB sharding</li>
+<li>Nginx load balancing</li>
+<li>CDN caching</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h1>14. Testing Strategy</h1>
+
+<ul>
+<li>Frontend: Vitest + React Testing Library</li>
+<li>Backend: Jest + Supertest</li>
+<li>Target Coverage: 80%+</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h1>15. Folder Structure</h1>
+
+<h3>Frontend</h3>
+
+<pre>
+frontend/
+src/
+components/
+pages/
+hooks/
+services/
+contexts/
+</pre>
+
+<h3>Backend</h3>
+
+<pre>
+backend/
+src/
+controllers/
+routes/
+models/
+services/
+middlewares/
+config/
+</pre>
+
+</body>
+</html>
