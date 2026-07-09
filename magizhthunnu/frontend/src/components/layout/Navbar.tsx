@@ -4,6 +4,7 @@ import { LogOut, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
+import ThemeSwitcher from '../ui/ThemeSwitcher';
 
 const Navbar = () => {
   const { t } = useTranslation();
@@ -102,6 +103,8 @@ const Navbar = () => {
                 </Link>
               </div>
             )}
+
+            <ThemeSwitcher />
           </div>
         </div>
       </div>
