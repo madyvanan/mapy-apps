@@ -8,6 +8,18 @@
   --font-sans: Inter, system-ui, sans-serif;
 }
 
+/* Color themes: R (default/orange), G (green), B (blue) — selected via ThemeSwitcher */
+[data-theme='G'] {
+  --color-primary: #04E864;
+  --color-primary-dark: #03A246;
+  --color-primary-light: #D9FBE7;
+}
+[data-theme='B'] {
+  --color-primary: #043FE8;
+  --color-primary-dark: #032CA2;
+  --color-primary-light: #D9E2FC;
+}
+
 @layer base {
   * {
     box-sizing: border-box;

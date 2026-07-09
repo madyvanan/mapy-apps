@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import MobileBottomNav from './components/layout/MobileBottomNav';
@@ -174,13 +175,15 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <AuthProvider>
-    <CartProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </CartProvider>
-  </AuthProvider>
+  <ThemeProvider>
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 export default App;
