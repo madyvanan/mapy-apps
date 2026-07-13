@@ -12,9 +12,10 @@ export const getMe = asyncHandler(async (req: AuthenticatedRequest, res: Respons
 
 export const updateProfile = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const allowed = ['name', 'phone', 'avatar'] as const;
+  const body = req.body as Record<string, unknown>;
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
-    if (req.body[key] !== undefined) updates[key] = req.body[key];
+    if (body[key] !== undefined) updates[key] = body[key];
   }
 
   const user = await prisma.user.update({ where: { id: req.user.id }, data: updates }).catch((err) => {
@@ -58,7 +59,7 @@ export const addAddress = asyncHandler(async (req: AuthenticatedRequest, res: Re
 });
 
 export const removeAddress = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const addressId = req.params['addressId']!;
+  const addressId = req.params['addressId'];
   const result = await prisma.address.deleteMany({ where: { id: addressId, userId: req.user.id } });
   if (result.count === 0) throw new AppError('Address not found', 404, 'NOT_FOUND');
 
