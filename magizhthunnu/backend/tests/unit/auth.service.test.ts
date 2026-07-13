@@ -1,9 +1,5 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { User } from '../../src/models/User.model';
+import { prisma } from '../../src/config/db';
 import { registerUser, loginUser } from '../../src/services/auth.service';
-
-let mongod: MongoMemoryServer;
 
 jest.mock('../../src/config/redis', () => ({
   redisClient: {
@@ -14,49 +10,44 @@ jest.mock('../../src/config/redis', () => ({
   },
 }));
 
-beforeAll(async () => {
-  process.env['JWT_SECRET'] = 'test-jwt-secret-at-least-32-characters!!';
-  process.env['JWT_REFRESH_SECRET'] = 'test-refresh-secret-at-least-32chars!';
+beforeAll(() => {
   process.env['JWT_EXPIRES_IN'] = '15m';
   process.env['JWT_REFRESH_EXPIRES_IN'] = '7d';
-  mongod = await MongoMemoryServer.create();
-  await mongoose.connect(mongod.getUri());
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongod.stop();
+  await prisma.$disconnect();
 });
 
 afterEach(async () => {
-  await User.deleteMany({});
+  await prisma.user.deleteMany({});
   jest.clearAllMocks();
 });
 
 describe('registerUser', () => {
-  it('creates a new user and returns the user document', async () => {
-    const user = await registerUser({ name: 'Mathi', email: 'mathi@example.com', password: 'Password123!' });
+  it('creates a new user and returns the user record', async () => {
+    const user = await registerUser({ name: 'Mathi', email: 'mathi@example.com', password: 'Password123!', mobile: '9876543210' });
     expect(user.email).toBe('mathi@example.com');
     expect(user.name).toBe('Mathi');
     expect(user.role).toBe('customer');
   });
 
   it('throws EMAIL_EXISTS if email already registered', async () => {
-    await registerUser({ name: 'Mathi', email: 'mathi@example.com', password: 'Password123!' });
+    await registerUser({ name: 'Mathi', email: 'mathi@example.com', password: 'Password123!', mobile: '9876543210' });
     await expect(
-      registerUser({ name: 'Other', email: 'mathi@example.com', password: 'Password123!' }),
+      registerUser({ name: 'Other', email: 'mathi@example.com', password: 'Password123!', mobile: '9876543211' }),
     ).rejects.toMatchObject({ code: 'EMAIL_EXISTS' });
   });
 
   it('accepts an optional role', async () => {
-    const user = await registerUser({ name: 'Owner', email: 'owner@example.com', password: 'Pass123!', role: 'restaurant' });
+    const user = await registerUser({ name: 'Owner', email: 'owner@example.com', password: 'Pass123!', mobile: '9876543212', role: 'restaurant' });
     expect(user.role).toBe('restaurant');
   });
 });
 
 describe('loginUser', () => {
   beforeEach(async () => {
-    await registerUser({ name: 'Mathi', email: 'mathi@example.com', password: 'Password123!' });
+    await registerUser({ name: 'Mathi', email: 'mathi@example.com', password: 'Password123!', mobile: '9876543210' });
   });
 
   it('returns user and tokens on valid credentials', async () => {

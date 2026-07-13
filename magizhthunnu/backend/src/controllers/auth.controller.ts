@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { AppError } from '../utils/AppError';
 import { AuthenticatedRequest } from '../types';
 import * as authService from '../services/auth.service';
-import { User } from '../models/User.model';
+import { prisma } from '../config/db';
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -20,7 +20,7 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
   res.status(201).json({
     success: true,
     data: {
-      id: user._id,
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
@@ -50,7 +50,7 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
   res.cookie('accessToken', tokens.accessToken, { ...COOKIE_OPTS, maxAge: 15 * 60 * 1000 });
   res.cookie('refreshToken', tokens.refreshToken, { ...COOKIE_OPTS, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
-  res.json({ success: true, data: { id: user._id, name: user.name, email: user.email, role: user.role }, message: 'Login successful' });
+  res.json({ success: true, data: { id: user.id, name: user.name, email: user.email, role: user.role }, message: 'Login successful' });
 });
 
 export const logout = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -69,7 +69,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response): Promise
 });
 
 export const getMe = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const user = await User.findById(req.user.id).select('-passwordHash');
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!user) throw new AppError('User not found', 404, 'NOT_FOUND');
   res.json({ success: true, data: user });
 });

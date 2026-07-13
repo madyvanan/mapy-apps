@@ -1,20 +1,20 @@
 version: '3.9'
 
 services:
-  mongodb:
-    image: mongo:7
-    container_name: magizhthunnu-mongo
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: magizhthunnu-postgres
     restart: unless-stopped
     ports:
-      - '27017:27017'
+      - '5432:5432'
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS:-secret}
-      MONGO_INITDB_DATABASE: magizhthunnu
+      POSTGRES_USER: ${POSTGRES_USER:-magizhthunnu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      POSTGRES_DB: magizhthunnu
     volumes:
-      - mongo-data:/data/db
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-magizhthunnu}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,11 +45,11 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      MONGODB_URI: mongodb://${MONGO_USER:-root}:${MONGO_PASS:-secret}@mongodb:27017/magizhthunnu?authSource=admin
+      DATABASE_URL: postgresql://${POSTGRES_USER:-magizhthunnu}:${POSTGRES_PASSWORD:-secret}@postgres:5432/magizhthunnu?schema=public
       REDIS_URL: redis://redis:6379
       NODE_ENV: production
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -83,5 +83,5 @@ services:
       - frontend
 
 volumes:
-  mongo-data:
+  postgres-data:
   redis-data:

@@ -13,6 +13,7 @@ import { logger, morganStream } from './config/logger';
 import { generalLimiter, orderLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
 import { initSocket } from './services/socket.service';
+import { scheduleCartCleanup } from './queues/cartCleanup.queue';
 import { authenticate } from './middleware/auth.middleware';
 
 import authRouter from './routes/auth.routes';
@@ -84,6 +85,7 @@ const start = async (): Promise<void> => {
   await connectDB();
   await redisClient.connect().catch(() => logger.warn('Redis connect skipped (lazy)'));
   initSocket(httpServer);
+  await scheduleCartCleanup();
 
   httpServer.listen(PORT, () => {
     logger.info(`Server running on port ${PORT} [${process.env['NODE_ENV'] ?? 'development'}]`);
