@@ -1,59 +1,70 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { Cart } from '../../src/models/Cart.model';
-import { MenuItem } from '../../src/models/MenuItem.model';
+import { prisma } from '../../src/config/db';
 import { addItem, getCart, clearCart } from '../../src/services/cart.service';
 
-let mongod: MongoMemoryServer;
-
-const userId = new mongoose.Types.ObjectId().toString();
-const restaurantId = new mongoose.Types.ObjectId();
+let userId: string;
 let menuItemId: string;
 let menuItem2Id: string;
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  await mongoose.connect(mongod.getUri());
-
-  const item = await MenuItem.create({
-    restaurantId,
-    name: 'Dosa',
-    description: 'Crispy',
-    price: 60,
-    category: 'Breakfast',
-    isAvailable: true,
-    isVeg: true,
-    customizations: [],
+  const owner = await prisma.user.create({
+    data: { name: 'Owner', email: 'owner-cart-test@example.com', passwordHash: 'irrelevant', role: 'restaurant' },
   });
-  menuItemId = (item._id as mongoose.Types.ObjectId).toString();
-
-  const otherRestaurantId = new mongoose.Types.ObjectId();
-  const item2 = await MenuItem.create({
-    restaurantId: otherRestaurantId,
-    name: 'Burger',
-    description: 'Juicy',
-    price: 120,
-    category: 'Fast Food',
-    isAvailable: true,
-    isVeg: false,
-    customizations: [],
+  const customer = await prisma.user.create({
+    data: { name: 'Customer', email: 'customer-cart-test@example.com', passwordHash: 'irrelevant', role: 'customer' },
   });
-  menuItem2Id = (item2._id as mongoose.Types.ObjectId).toString();
+  userId = customer.id;
+
+  const restaurant = await prisma.restaurant.create({
+    data: { ownerId: owner.id, name: 'Test Restaurant', street: 'S', city: 'C', state: 'ST', pincode: '000000' },
+  });
+
+  const item = await prisma.menuItem.create({
+    data: {
+      restaurantId: restaurant.id,
+      name: 'Dosa',
+      description: 'Crispy',
+      price: 60,
+      category: 'Breakfast',
+      isAvailable: true,
+      isVeg: true,
+    },
+  });
+  menuItemId = item.id;
+
+  const otherOwner = await prisma.user.create({
+    data: { name: 'Other Owner', email: 'other-owner-cart-test@example.com', passwordHash: 'irrelevant', role: 'restaurant' },
+  });
+  const otherRestaurant = await prisma.restaurant.create({
+    data: { ownerId: otherOwner.id, name: 'Other Restaurant', street: 'S', city: 'C', state: 'ST', pincode: '000000' },
+  });
+  const item2 = await prisma.menuItem.create({
+    data: {
+      restaurantId: otherRestaurant.id,
+      name: 'Burger',
+      description: 'Juicy',
+      price: 120,
+      category: 'Fast Food',
+      isAvailable: true,
+      isVeg: false,
+    },
+  });
+  menuItem2Id = item2.id;
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongod.stop();
+  await prisma.restaurant.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.$disconnect();
 });
 
-afterEach(() => Cart.deleteMany({}));
+afterEach(() => prisma.cart.deleteMany({}));
 
 describe('addItem', () => {
   it('creates a new cart and adds an item', async () => {
     const cart = await addItem(userId, { menuItemId, quantity: 1 });
     expect(cart.items).toHaveLength(1);
     expect(cart.items[0]!.name).toBe('Dosa');
-    expect(cart.totalAmount).toBe(60);
+    expect(Number(cart.totalAmount)).toBe(60);
   });
 
   it('throws CROSS_RESTAURANT when adding item from different restaurant', async () => {
@@ -67,13 +78,16 @@ describe('addItem', () => {
     await addItem(userId, { menuItemId, quantity: 1 });
     const cart = await addItem(userId, { menuItemId, quantity: 1 });
     expect(cart.items[0]!.quantity).toBe(2);
-    expect(cart.totalAmount).toBe(120);
+    expect(Number(cart.totalAmount)).toBe(120);
   });
 });
 
 describe('getCart', () => {
   it('returns null when no cart exists', async () => {
-    const cart = await getCart(new mongoose.Types.ObjectId().toString());
+    const nobody = await prisma.user.create({
+      data: { name: 'Nobody', email: 'nobody-cart-test@example.com', passwordHash: 'irrelevant', role: 'customer' },
+    });
+    const cart = await getCart(nobody.id);
     expect(cart).toBeNull();
   });
 });

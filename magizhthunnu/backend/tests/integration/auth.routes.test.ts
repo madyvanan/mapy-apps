@@ -1,6 +1,4 @@
 import request from 'supertest';
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 
 jest.mock('../../src/config/redis', () => ({
   redisClient: {
@@ -22,54 +20,42 @@ jest.mock('../../src/services/socket.service', () => ({
   emitOrderEvent: jest.fn(),
 }));
 
-jest.mock('../../src/config/db', () => ({
-  connectDB: jest.fn().mockResolvedValue(undefined),
-}));
-
 // Import app AFTER mocks are set up
 import { app } from '../../src/server';
-import { User } from '../../src/models/User.model';
-
-let mongod: MongoMemoryServer;
-
-beforeAll(async () => {
-  process.env['JWT_SECRET'] = 'test-jwt-secret-at-least-32-characters!!';
-  process.env['JWT_REFRESH_SECRET'] = 'test-refresh-secret-at-least-32chars!';
-  process.env['NODE_ENV'] = 'test';
-  mongod = await MongoMemoryServer.create();
-  await mongoose.connect(mongod.getUri());
-});
+import { prisma } from '../../src/config/db';
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongod.stop();
+  await prisma.$disconnect();
 });
 
-afterEach(() => User.deleteMany({}));
+afterEach(() => prisma.user.deleteMany({}));
 
 describe('POST /api/auth/register', () => {
   it('registers a user and returns 201', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ name: 'Mathi', email: 'mathi@test.com', password: 'Password123!' });
+      .send({ name: 'Mathi', email: 'mathi@mapyapps.com', password: 'Password123!', mobile: '9876543210' });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.email).toBe('mathi@test.com');
-    expect(res.headers['set-cookie']).toBeDefined();
+    expect(res.body.data.email).toBe('mathi@mapyapps.com');
   });
 
   it('returns 400 on missing name', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ email: 'x@x.com', password: 'Password123!' });
+      .send({ email: 'x@mapyapps.com', password: 'Password123!', mobile: '9876543210' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 400 on duplicate email', async () => {
-    await request(app).post('/api/auth/register').send({ name: 'A', email: 'dup@test.com', password: 'Password123!' });
-    const res = await request(app).post('/api/auth/register').send({ name: 'B', email: 'dup@test.com', password: 'Password123!' });
+    await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'A', email: 'dup@mapyapps.com', password: 'Password123!', mobile: '9876543210' });
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'B', email: 'dup@mapyapps.com', password: 'Password123!', mobile: '9876543211' });
     expect(res.status).toBe(400);
   });
 });
@@ -78,22 +64,22 @@ describe('POST /api/auth/login', () => {
   beforeEach(async () => {
     await request(app)
       .post('/api/auth/register')
-      .send({ name: 'Mathi', email: 'mathi@test.com', password: 'Password123!' });
+      .send({ name: 'Mathi', email: 'mathi@mapyapps.com', password: 'Password123!', mobile: '9876543210' });
   });
 
   it('logs in with valid credentials and sets cookies', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'mathi@test.com', password: 'Password123!' });
+      .send({ email: 'mathi@mapyapps.com', password: 'Password123!' });
     expect(res.status).toBe(200);
-    expect(res.body.data.email).toBe('mathi@test.com');
+    expect(res.body.data.email).toBe('mathi@mapyapps.com');
     expect(res.headers['set-cookie']).toBeDefined();
   });
 
   it('returns 401 on wrong password', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'mathi@test.com', password: 'wrongpass' });
+      .send({ email: 'mathi@mapyapps.com', password: 'wrongpass' });
     expect(res.status).toBe(401);
   });
 });

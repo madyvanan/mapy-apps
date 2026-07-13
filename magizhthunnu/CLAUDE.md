@@ -1,6 +1,6 @@
 # Magizhthunnu - Online Food Delivery App
 
-A MERN/PERN stack food delivery application built with Vite, Express, MongoDB/PostgresSQL, and Paytm payments
+A PERN stack food delivery application built with Vite, Express, PostgreSQL (via Prisma), and Paytm payments
 
 > This app lives inside the `mapy-apps` monorepo as an independent, self-contained project (see `../CLAUDE.md` and `../docs/`). Nothing below applies to sibling apps, and nothing from sibling apps applies here.
 
@@ -12,9 +12,9 @@ A MERN/PERN stack food delivery application built with Vite, Express, MongoDB/Po
 
 - Backend: Node.js 22 or above  and  Express.js
 
-- Database: MongoDB or postgresSQL use which one best for this app
+- Database: PostgreSQL 16 with the PostGIS extension, accessed via Prisma
 
-- use ORMs
+- ORM: Prisma (schema in `backend/prisma/schema.prisma`)
 
 - Payments: Paytm Payment Gateway
 
@@ -26,7 +26,7 @@ A MERN/PERN stack food delivery application built with Vite, Express, MongoDB/Po
 
 - Backend: Render / Railway / AWS EC2
 
-- Database: MongoDB or postgresSQL use which one best for this app
+- Database: PostgreSQL 16 with PostGIS (Prisma ORM)
 
 ## Commands
 
@@ -101,9 +101,9 @@ Backend (backend/)
 
 - src/server.ts – Express entry file
 
-- src/config/ – DB & environment config
+- src/config/ – DB & environment config (Prisma client singleton in `db.ts`)
 
-- src/models/ – Mongoose models
+- prisma/schema.prisma – Prisma schema (single source of truth for all models)
 
 - src/routes/ – API routes
 
@@ -221,41 +221,43 @@ User → Backend → Paytm Gateway
 
 - Paytm checksum verification
 
-- MongoDB IP whitelisting
+- PostgreSQL network/firewall rules (restrict inbound access to trusted hosts)
 
 ## Low-Level System Design (LLD)
 
 This covers:
 
-- MongoDB Collections
+- PostgreSQL Tables (see `backend/prisma/schema.prisma`)
 
-- Document Schema Design
+- Relational Schema Design
 
-- Relationships
+- Relationships (foreign keys)
 
-- Indexing Strategy
+- Indexing Strategy (incl. PostGIS GIST index, full-text GIN index)
 
 - Order & Payment Flow Mapping
 
-## Tables/Collections Overview
+## Tables Overview
 
-Main tables/collections:
+Main tables:
 
-- users
+- user
 
-- restaurants
+- address (normalized from the old embedded `addresses[]`)
 
-- menuItems
+- restaurant
 
-- carts
+- menu_item
 
-- orders
+- menu_item_customization / menu_item_customization_option
 
-- payments
+- cart / cart_item
 
-- reviews
+- order / order_line_item
 
-- addresses
+- payment
+
+- review
 
 - Clear cart
 
@@ -276,11 +278,10 @@ Main tables/collections:
 
 	Session tokens
 
-- TTL Index (Optional)
+- Abandoned Cart Cleanup (Optional)
 
-	Auto-delete abandoned carts:
-
-	db.carts.createIndex({ updatedAt: 1 }, { expireAfterSeconds: 86400 })
+	No TTL index in Postgres — instead a scheduled BullMQ repeatable job deletes
+	carts where `updated_at` is older than 24h (`cart.updatedAt` is indexed to keep this fast).
 
 ## Security Design
 
