@@ -1,6 +1,7 @@
+import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { User, IUser } from '../models/User.model';
+import { prisma, comparePassword } from '../config/db';
 import { AppError } from '../utils/AppError';
 import { redisClient } from '../config/redis';
 import { JwtPayload, UserRole } from '../types';
@@ -44,21 +45,16 @@ const signRefreshToken = (userId: string, role: UserRole): string => {
   });
 };
 
-export const registerUser = async (input: RegisterInput): Promise<IUser> => {
-  const existing = await User.findOne({ email: input.email });
+export const registerUser = async (input: RegisterInput) => {
+  const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new AppError('Email already in use', 400, 'EMAIL_EXISTS');
 
-  const user = new User({
-    name: input.name,
-    email: input.email,
-    passwordHash: input.password,
-    phone: input.mobile,
-    role: input.role ?? 'customer',
-  });
+  const userId = randomUUID();
+  let mailVerifyLinkSent = false;
+  let mobileOtpHash: string | undefined;
+  let mobileOtpExpiresAt: Date | undefined;
 
   if (process.env['NODE_ENV'] === 'production') {
-    const userId = (user._id as unknown as { toString(): string }).toString();
-
     const secret = process.env['JWT_SECRET'];
     if (!secret) throw new AppError('Server misconfiguration', 500);
     const token = jwt.sign({ userId, valid: true } satisfies EmailVerifyTokenPayload, secret, {
@@ -66,15 +62,15 @@ export const registerUser = async (input: RegisterInput): Promise<IUser> => {
     });
     const link = `${process.env['FRONTEND_URL']}/isValid=${token}`;
     try {
-      await sendVerificationEmail(user.email, link);
-      user.mail_verify_link_sent = true;
+      await sendVerificationEmail(input.email, link);
+      mailVerifyLinkSent = true;
     } catch (err) {
       logger.error('Failed to send verification email', err);
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    user.mobileOtpHash = await bcrypt.hash(otp, 10);
-    user.mobileOtpExpiresAt = new Date(Date.now() + OTP_TTL_MS);
+    mobileOtpHash = await bcrypt.hash(otp, 10);
+    mobileOtpExpiresAt = new Date(Date.now() + OTP_TTL_MS);
     try {
       await sendOtpSms(input.mobile, otp);
     } catch (err) {
@@ -82,7 +78,19 @@ export const registerUser = async (input: RegisterInput): Promise<IUser> => {
     }
   }
 
-  return user.save();
+  return prisma.user.create({
+    data: {
+      id: userId,
+      name: input.name,
+      email: input.email,
+      passwordHash: input.password,
+      phone: input.mobile,
+      role: input.role ?? 'customer',
+      mailVerifyLinkSent,
+      mobileOtpHash,
+      mobileOtpExpiresAt,
+    },
+  });
 };
 
 export const verifyEmailToken = async (token: string): Promise<boolean> => {
@@ -91,28 +99,26 @@ export const verifyEmailToken = async (token: string): Promise<boolean> => {
 
   try {
     const payload = jwt.verify(token, secret) as EmailVerifyTokenPayload;
-    const user = await User.findById(payload.userId);
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) throw new AppError('User not found', 404, 'NOT_FOUND');
-    user.mail_verified = true;
-    await user.save();
+    await prisma.user.update({ where: { id: user.id }, data: { mailVerified: true } });
     return true;
   } catch (err) {
     if (err instanceof AppError) throw err;
 
     const decoded = jwt.decode(token) as EmailVerifyTokenPayload | null;
     if (decoded?.userId) {
-      const user = await User.findById(decoded.userId);
-      if (user) {
-        user.mail_verified = false;
-        await user.save();
-      }
+      await prisma.user.updateMany({ where: { id: decoded.userId }, data: { mailVerified: false } });
     }
     return false;
   }
 };
 
 export const verifyMobileOtp = async (userId: string, otp: string): Promise<void> => {
-  const user = await User.findById(userId).select('+mobileOtpHash +mobileOtpExpiresAt');
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    omit: { mobileOtpHash: false, mobileOtpExpiresAt: false },
+  });
   if (!user) throw new AppError('User not found', 404, 'NOT_FOUND');
 
   if (!user.mobileOtpHash || !user.mobileOtpExpiresAt || user.mobileOtpExpiresAt < new Date()) {
@@ -122,27 +128,26 @@ export const verifyMobileOtp = async (userId: string, otp: string): Promise<void
   const valid = await bcrypt.compare(otp, user.mobileOtpHash);
   if (!valid) throw new AppError('Invalid OTP', 400, 'INVALID_OTP');
 
-  user.mobile_verified = true;
-  user.mobileOtpHash = undefined;
-  user.mobileOtpExpiresAt = undefined;
-  await user.save();
+  await prisma.user.update({
+    where: { id: userId },
+    data: { mobileVerified: true, mobileOtpHash: null, mobileOtpExpiresAt: null },
+  });
 };
 
-export const loginUser = async (email: string, password: string): Promise<{ user: IUser; tokens: AuthTokens }> => {
-  const user = await User.findOne({ email }).select('+passwordHash');
+export const loginUser = async (email: string, password: string): Promise<{ user: { id: string; role: UserRole; isActive: boolean; email: string; name: string }; tokens: AuthTokens }> => {
+  const user = await prisma.user.findUnique({ where: { email }, omit: { passwordHash: false } });
   if (!user) throw new AppError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
 
-  const valid = await user.comparePassword(password);
+  const valid = await comparePassword(password, user.passwordHash);
   if (!valid) throw new AppError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
 
   if (!user.isActive) throw new AppError('Account is deactivated', 403, 'ACCOUNT_INACTIVE');
 
-  const userId = (user._id as unknown as { toString(): string }).toString();
-  const accessToken = signAccessToken(userId, user.role);
-  const refreshToken = signRefreshToken(userId, user.role);
+  const accessToken = signAccessToken(user.id, user.role);
+  const refreshToken = signRefreshToken(user.id, user.role);
 
   const ttl = 7 * 24 * 60 * 60;
-  await redisClient.set(`refresh:${userId}`, refreshToken, 'EX', ttl);
+  await redisClient.set(`refresh:${user.id}`, refreshToken, 'EX', ttl);
 
   return { user, tokens: { accessToken, refreshToken } };
 };

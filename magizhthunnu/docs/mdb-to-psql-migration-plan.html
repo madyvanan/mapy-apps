@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magizhthunnu - MongoDB to PostgreSQL Migration Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --primary: #E85D04;
+    --primary-dark: #C44D02;
+    --primary-light: #FFF3E8;
+    --secondary: #1A1A2E;
+    --success: #0F9B58;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --info: #3B82F6;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --text: #1F2937;
+    --border: #E5E7EB;
+    --code-bg: #0F172A;
+    --code-text: #E2E8F0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; color:var(--text); background:#fff; font-size:14px; line-height:1.6; }
+
+  .cover {
+    min-height:60vh; background:linear-gradient(135deg,#1A1A2E 0%,#16213E 40%,#0F3460 100%);
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; padding:60px 40px; position:relative; overflow:hidden;
+  }
+  .cover::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background:radial-gradient(circle at 30% 70%, rgba(232,93,4,0.15) 0%, transparent 50%),
+               radial-gradient(circle at 70% 30%, rgba(59,130,246,0.1) 0%, transparent 50%);
+  }
+  .cover-badge {
+    background:rgba(232,93,4,0.2); border:1px solid rgba(232,93,4,0.4);
+    color:#FF8C42; padding:6px 20px; border-radius:20px; font-size:12px;
+    font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-bottom:24px; position:relative; z-index:1;
+  }
+  .cover h1 { font-size:44px; font-weight:800; color:#fff; letter-spacing:-1px; line-height:1.15; margin-bottom:12px; position:relative; z-index:1; }
+  .cover h1 span { color:var(--primary); }
+  .cover-tagline { font-size:17px; color:rgba(255,255,255,0.7); margin-bottom:32px; font-weight:300; position:relative; z-index:1; max-width:700px; }
+  .cover-meta { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1; margin-top:8px; }
+  .cover-meta-item { text-align:center; }
+  .cover-meta-item .label { font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .cover-meta-item .value { font-size:14px; color:rgba(255,255,255,0.9); font-weight:500; }
+
+  .page { max-width:1150px; margin:0 auto; padding:48px 40px; }
+
+  .toc { background:var(--gray-50); border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin-bottom:20px; }
+  .toc h2 { font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--gray-600); margin-bottom:12px; }
+  .toc ol { list-style:none; columns:2; gap:24px; }
+  .toc li { margin-bottom:8px; }
+  .toc a { color:var(--primary-dark); text-decoration:none; font-weight:500; font-size:13.5px; }
+  .toc a:hover { text-decoration:underline; }
+
+  .section { margin:56px 0; }
+  .section-number { font-size:11px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+  .section-title { font-size:26px; font-weight:800; color:var(--gray-900); letter-spacing:-0.5px; line-height:1.2; }
+  .section-subtitle { font-size:14.5px; color:var(--gray-600); margin-top:10px; max-width:800px; }
+  .section-divider { width:40px; height:3px; background:var(--primary); border-radius:2px; margin:16px 0 28px; }
+
+  h3.sub { font-size:16px; font-weight:700; color:var(--gray-800); margin:32px 0 12px; }
+  p { margin-bottom:12px; color:var(--gray-700); }
+  ul, ol.plain { margin:0 0 12px 20px; color:var(--gray-700); }
+  li { margin-bottom:6px; }
+  strong { color:var(--gray-900); font-weight:600; }
+  code.inline { background:var(--gray-100); color:var(--primary-dark); padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:12.5px; }
+
+  table { width:100%; border-collapse:collapse; margin:16px 0 24px; font-size:13px; }
+  thead th {
+    background:var(--secondary); color:#fff; text-align:left; padding:10px 14px;
+    font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;
+  }
+  tbody td { padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--gray-700); }
+  tbody tr:nth-child(even) { background:var(--gray-50); }
+  tbody td code.inline { white-space:nowrap; }
+
+  pre {
+    background:var(--code-bg); color:var(--code-text); padding:20px 22px; border-radius:10px;
+    overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.65;
+    margin:16px 0 24px; border:1px solid #1E293B;
+  }
+  pre .cm { color:#64748B; }
+  pre .kw { color:#F472B6; }
+  pre .ty { color:#5EEAD4; }
+  pre .st { color:#FBBF24; }
+
+  .callout { border-radius:10px; padding:16px 20px; margin:18px 0; border-left:4px solid; font-size:13.5px; }
+  .callout.info { background:#EFF6FF; border-color:var(--info); color:#1E3A8A; }
+  .callout.warn { background:#FFFBEB; border-color:var(--warning); color:#78350F; }
+  .callout.decision { background:var(--primary-light); border-color:var(--primary); color:#7C2D02; }
+  .callout p:last-child { margin-bottom:0; }
+  .callout strong { color:inherit; }
+
+  .badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; }
+  .badge.add { background:#DCFCE7; color:#166534; }
+  .badge.remove { background:#FEE2E2; color:#991B1B; }
+  .badge.phase { background:var(--primary-light); color:var(--primary-dark); }
+
+  .risk-grid { display:grid; grid-template-columns:32px 1fr; gap:4px 14px; align-items:start; margin:8px 0 24px; }
+  .risk-num { background:var(--danger); color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .risk-body { padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .risk-body strong { display:block; margin-bottom:2px; color:var(--gray-900); font-size:13.5px; }
+  .risk-body span { color:var(--gray-600); font-size:13px; }
+
+  footer { text-align:center; padding:40px; color:var(--gray-300); font-size:12px; border-top:1px solid var(--border); margin-top:40px; }
+
+  @media (prefers-color-scheme: dark) {
+    body { background:#0B0F19; color:#E2E8F0; }
+    .section-title { color:#F1F5F9; }
+    .section-subtitle { color:#94A3B8; }
+    p, ul, li { color:#CBD5E1; }
+    strong { color:#F1F5F9; }
+    code.inline { background:#1E293B; color:#FDBA74; }
+    .toc { background:#111827; border-color:#1F2937; }
+    .toc h2 { color:#94A3B8; }
+    thead th { background:#1E293B; }
+    tbody td { border-color:#1F2937; color:#CBD5E1; }
+    tbody tr:nth-child(even) { background:#111827; }
+    .callout.info { background:#0C1E3E; color:#BFDBFE; }
+    .callout.warn { background:#3F2D06; color:#FDE68A; }
+    .callout.decision { background:#3A1E06; color:#FDBA74; }
+    .risk-body { border-color:#1F2937; }
+    .risk-body strong { color:#F1F5F9; }
+    .risk-body span { color:#94A3B8; }
+    footer { border-color:#1F2937; color:#475569; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-badge">Migration Plan &middot; Documentation Only</div>
+  <h1>MongoDB &rarr; <span>PostgreSQL</span></h1>
+  <p class="cover-tagline">Magizhthunnu backend data layer migration: 7 Mongoose models &rarr; Prisma + PostgreSQL 16 + PostGIS</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">App</div><div class="value">magizhthunnu / backend</div></div>
+    <div class="cover-meta-item"><div class="label">Target ORM</div><div class="value">Prisma</div></div>
+    <div class="cover-meta-item"><div class="label">Migration type</div><div class="value">Clean rewrite (pre-launch)</div></div>
+    <div class="cover-meta-item"><div class="label">Geo support</div><div class="value">PostGIS</div></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#overview">1. Overview &amp; Confirmed Decisions</a></li>
+      <li><a href="#login-continuity">1b. Login / Credential Continuity</a></li>
+      <li><a href="#inventory">2. Current MongoDB Schema Inventory</a></li>
+      <li><a href="#schema">3. Target Prisma Schema</a></li>
+      <li><a href="#mapping">4. Mapping Decisions</a></li>
+      <li><a href="#phases">5. Migration Phases (0&ndash;8)</a></li>
+      <li><a href="#tooling">6. Package &amp; Tooling Changes</a></li>
+      <li><a href="#risks">7. Risks &amp; Gotchas</a></li>
+      <li><a href="#files">8. Critical Files</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. OVERVIEW -->
+  <div class="section" id="overview">
+    <div class="section-number">Section 1</div>
+    <div class="section-title">Overview &amp; Confirmed Decisions</div>
+    <div class="section-divider"></div>
+
+    <p><code class="inline">magizhthunnu/CLAUDE.md</code> leaves the database choice open ("Database: MongoDB or postgresSQL &mdash; use whichever is best for this app"). This document is the concrete plan for settling that: move all 7 Mongoose models used by the backend to PostgreSQL via Prisma. <strong>This is a planning document only &mdash; no source code has been changed.</strong></p>
+
+    <div class="callout decision">
+      <p><strong>Decisions confirmed for this plan:</strong></p>
+      <p>&bull; <strong>ORM:</strong> Prisma &mdash; TypeScript-first schema, first-class migration tooling.</p>
+      <p>&bull; <strong>Data state:</strong> app is pre-launch, only seed data exists (3 users, 1 restaurant) &rarr; this is a <strong>clean schema rewrite + re-seed</strong>, not a live-data ETL / zero-downtime cutover.</p>
+      <p>&bull; <strong>PostGIS</strong> will be available on the target Postgres host &rarr; used for the "restaurants near me" geospatial feature via <code class="inline">geography(Point,4326)</code> + GIST index.</p>
+    </div>
+
+    <h3 class="sub">Current stack</h3>
+    <p>Node 22 + Express 4 + TypeScript, Mongoose 8.3.3 against MongoDB 7. Redis (ioredis) + BullMQ power caching and the email queue and are <strong>untouched</strong> by this migration. Frontend (React/Vite) is untouched &mdash; it talks to the API, not the DB, directly.</p>
+
+    <h3 class="sub">Scope</h3>
+    <p>Everything under <code class="inline">magizhthunnu/backend/src/{models,services,controllers,config}</code> plus <code class="inline">magizhthunnu/docker-compose.yml</code>, <code class="inline">magizhthunnu/backend/package.json</code>, and <code class="inline">magizhthunnu/backend/.env</code>. No changes to <code class="inline">frontend/</code>, Redis, BullMQ, or sibling apps in the monorepo.</p>
+  </div>
+
+  <!-- 1b. LOGIN CONTINUITY -->
+  <div class="section" id="login-continuity">
+    <div class="section-number">Section 1b</div>
+    <div class="section-title">Login / Credential Continuity</div>
+    <div class="section-divider"></div>
+
+    <div class="callout info">
+      <p><strong>There is no "username" field in this app.</strong> Login is <strong>email + password</strong> only &mdash; confirmed by grepping the entire backend (<code class="inline">grep -rn "username" src/</code> returns zero matches). <code class="inline">IUser</code>, the login controller, and the Zod <code class="inline">loginSchema</code> all reference only <code class="inline">email</code>.</p>
+    </div>
+
+    <p>The 3 existing accounts are seed data only (admin/restaurant-owner/customer, created by <code class="inline">backend/src/config/seed.ts</code>). Since this migration is a <strong>clean re-seed</strong> rather than a data copy (Section 1), "same login" isn't automatic &mdash; it's guaranteed only because the new Postgres/Prisma path reproduces today's exact mechanics:</p>
+
+    <table>
+      <thead><tr><th>Step</th><th>Today (Mongo)</th><th>Post-migration (Postgres/Prisma) &mdash; must match</th></tr></thead>
+      <tbody>
+        <tr><td>Password source</td><td><code class="inline">seed.ts</code> reads plaintext env vars (<code class="inline">SEED_ADMIN_PASSWORD</code>, etc., default <code class="inline">test123</code>) &mdash; no hardcoded hash anywhere</td><td>Same env vars, same plaintext defaults &mdash; unchanged</td></tr>
+        <tr><td>Hashing</td><td><code class="inline">User.model.ts</code> <code class="inline">pre('save')</code> hook: <code class="inline">bcrypt.hash(passwordHash, 12)</code>, only when modified</td><td>Prisma <code class="inline">$extends</code> client extension must hash with the <strong>same bcrypt cost factor (12)</strong> on create/update &mdash; see mapping decision #12</td></tr>
+        <tr><td>Login lookup</td><td><code class="inline">auth.service.ts</code>: <code class="inline">User.findOne({ email }).select('+passwordHash')</code></td><td><code class="inline">prisma.user.findUnique({ where: { email }, omit: { passwordHash: false } })</code> &mdash; same field, same "hidden unless asked for" shape</td></tr>
+        <tr><td>Password compare</td><td><code class="inline">user.comparePassword(password)</code> &rarr; <code class="inline">bcrypt.compare(candidate, passwordHash)</code></td><td>Exported <code class="inline">comparePassword(candidate, hash)</code> function, same <code class="inline">bcrypt.compare</code> call</td></tr>
+        <tr><td>Failure behavior</td><td>Wrong email <em>and</em> wrong password both throw the same generic 401 <code class="inline">INVALID_CREDENTIALS</code> (no enumeration leak); deactivated account is a separate 403 checked after password succeeds</td><td>Port unchanged &mdash; do not differentiate the error message between wrong-email and wrong-password</td></tr>
+      </tbody>
+    </table>
+
+    <p>As long as Phase 2's <code class="inline">auth.service.ts</code> rewrite and Phase 5's seed-script rewrite reproduce this table row-for-row, all 3 seeded accounts log in with the exact same email/password after cutover. This is verified explicitly in the Phase 8 checklist (Section 5).</p>
+
+    <div class="callout warn">
+      <p><strong>Pre-existing quirk, not a migration regression (see Risk #11):</strong> today's login does <code class="inline">User.findOne({ email })</code> with no <code class="inline">.toLowerCase()</code>/<code class="inline">.trim()</code> on the input &mdash; Mongoose's <code class="inline">lowercase:true</code> only normalizes on write, not on query. It doesn't affect the 3 seed accounts (their emails are already lowercase constants), and the migration should carry this behavior over unchanged rather than silently "fixing" it.</p>
+    </div>
+  </div>
+
+  <!-- 2. INVENTORY -->
+  <div class="section" id="inventory">
+    <div class="section-number">Section 2</div>
+    <div class="section-title">Current MongoDB Schema Inventory</div>
+    <div class="section-divider"></div>
+    <p class="section-subtitle">All 7 Mongoose models live in <code class="inline">backend/src/models/*.model.ts</code>. Connection setup is in <code class="inline">backend/src/config/db.ts</code> (retry-loop <code class="inline">mongoose.connect</code>, no transactions/sessions used anywhere in the codebase).</p>
+
+    <h3 class="sub">User</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>name</td><td>String</td><td>required, trim</td></tr>
+        <tr><td>email</td><td>String</td><td>required, <strong>unique</strong>, lowercase, trim</td></tr>
+        <tr><td>passwordHash</td><td>String</td><td>required, <code class="inline">select:false</code></td></tr>
+        <tr><td>role</td><td>enum</td><td>customer | restaurant | admin, default customer</td></tr>
+        <tr><td>phone, avatar</td><td>String?</td><td>optional</td></tr>
+        <tr><td>addresses</td><td>[Subdocument]</td><td>embedded array: label, street, city, state, pincode, coordinates{lat,lng}, isDefault</td></tr>
+        <tr><td>isActive</td><td>Boolean</td><td>default true</td></tr>
+        <tr><td>mail_verify_link_sent / mail_verified / mobile_verified</td><td>Boolean</td><td>default false</td></tr>
+        <tr><td>mobileOtpHash, mobileOtpExpiresAt</td><td>String? / Date?</td><td><code class="inline">select:false</code></td></tr>
+      </tbody>
+    </table>
+    <p><strong>Indexes:</strong> unique <code class="inline">email</code>, <code class="inline">{role:1}</code>. <strong>Behavior:</strong> pre-save bcrypt hash hook (12 rounds) + <code class="inline">comparePassword()</code> instance method.</p>
+
+    <h3 class="sub">Restaurant</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>ownerId</td><td>ObjectId &rarr; User</td><td>required</td></tr>
+        <tr><td>name, description, cuisineTypes[], logo, coverImage</td><td>mixed</td><td>name required</td></tr>
+        <tr><td>address</td><td>nested object</td><td>street/city/state/pincode required + <code class="inline">location</code>: GeoJSON Point, default [0,0]</td></tr>
+        <tr><td>rating / totalRatings</td><td>Number</td><td>default 0, rating min0 max5</td></tr>
+        <tr><td>isOpen / isVerified</td><td>Boolean</td><td>default false</td></tr>
+        <tr><td>openingHours</td><td><strong>Map&lt;string,{open,close}&gt;</strong></td><td>default {}</td></tr>
+        <tr><td>deliveryRadius / minOrder / deliveryFee / avgDeliveryTime</td><td>Number</td><td>defaults 5 / 0 / 0 / 30</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Indexes:</strong> <code class="inline">2dsphere</code> on <code class="inline">address.location</code> (powers <code class="inline">$near</code>), <code class="inline">text</code> index on name+description (powers <code class="inline">$text</code>), compound <code class="inline">{cuisineTypes:1,isOpen:1}</code>, <code class="inline">{ownerId:1}</code>.</p>
+
+    <h3 class="sub">MenuItem</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>restaurantId</td><td>ObjectId &rarr; Restaurant</td><td>required</td></tr>
+        <tr><td>name, description, category, image, tags[]</td><td>mixed</td><td>name/category required</td></tr>
+        <tr><td>price</td><td>Number</td><td>required, min 0</td></tr>
+        <tr><td>isVeg / isAvailable</td><td>Boolean</td><td>default false / true</td></tr>
+        <tr><td>customizations</td><td>[Subdocument]</td><td>nested: <code class="inline">{name, options:[{label,extraPrice}]}</code> &mdash; 2 levels deep</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Indexes:</strong> <code class="inline">{restaurantId:1,category:1}</code>, <code class="inline">{restaurantId:1,isAvailable:1}</code>.</p>
+
+    <h3 class="sub">Cart</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>userId</td><td>ObjectId &rarr; User</td><td>required, <strong>unique</strong> (1 cart/user)</td></tr>
+        <tr><td>restaurantId</td><td>ObjectId &rarr; Restaurant</td><td>required</td></tr>
+        <tr><td>items</td><td>[Subdocument]</td><td><code class="inline">{menuItemId, name, price, quantity, customizations[], subtotal}</code></td></tr>
+        <tr><td>totalAmount</td><td>Number</td><td>default 0</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Index:</strong> <strong>TTL</strong> on <code class="inline">updatedAt</code>, <code class="inline">expireAfterSeconds:86400</code> &mdash; auto-deletes abandoned carts after 24h.</p>
+
+    <h3 class="sub">Order</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>userId, restaurantId</td><td>ObjectId refs</td><td>required</td></tr>
+        <tr><td>items</td><td>[Subdocument]</td><td>denormalized line-item snapshot at order time</td></tr>
+        <tr><td>deliveryAddress</td><td>nested object</td><td>denormalized snapshot, not a live ref</td></tr>
+        <tr><td>status</td><td>enum</td><td>pending &rarr; confirmed &rarr; preparing &rarr; out_for_delivery &rarr; delivered &rarr; cancelled</td></tr>
+        <tr><td>paymentStatus</td><td>enum</td><td>pending | paid | failed | refunded</td></tr>
+        <tr><td>paymentId</td><td>ObjectId? &rarr; Payment</td><td>optional back-reference</td></tr>
+        <tr><td>subtotal, deliveryFee, taxes, totalAmount</td><td>Number</td><td>subtotal/totalAmount required</td></tr>
+        <tr><td>idempotencyKey</td><td>String</td><td>required, <strong>unique</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>Indexes:</strong> <code class="inline">{userId:1,createdAt:-1}</code>, <code class="inline">{restaurantId:1,status:1}</code>, <code class="inline">{status:1}</code>.</p>
+
+    <h3 class="sub">Payment</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>orderId</td><td>ObjectId &rarr; Order</td><td>required, <strong>unique</strong></td></tr>
+        <tr><td>userId</td><td>ObjectId &rarr; User</td><td>required</td></tr>
+        <tr><td>amount, currency, gateway</td><td>mixed</td><td>currency default INR, gateway enum [paytm]</td></tr>
+        <tr><td>gatewayOrderId, gatewayPaymentId, checksum</td><td>String?</td><td>Paytm-specific</td></tr>
+        <tr><td>status</td><td>enum</td><td>pending | paid | failed | refunded</td></tr>
+        <tr><td>idempotencyKey</td><td>String</td><td>required, <strong>unique</strong></td></tr>
+        <tr><td>metadata</td><td><strong>Schema.Types.Mixed</strong></td><td>raw Paytm webhook body, untyped</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Index:</strong> <code class="inline">{gatewayPaymentId:1}</code>.</p>
+
+    <h3 class="sub">Review</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>userId, restaurantId</td><td>ObjectId refs</td><td>required</td></tr>
+        <tr><td>orderId</td><td>ObjectId &rarr; Order</td><td>required, <strong>unique</strong> (1 review/order)</td></tr>
+        <tr><td>rating</td><td>Number</td><td>required, min1 max5</td></tr>
+        <tr><td>comment</td><td>String?</td><td>maxlength 500</td></tr>
+        <tr><td>images[]</td><td>String[]</td><td></td></tr>
+        <tr><td>helpfulCount</td><td>Number</td><td>default 0</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Indexes:</strong> <code class="inline">{restaurantId:1,createdAt:-1}</code>, <code class="inline">{userId:1}</code>.</p>
+
+    <h3 class="sub">Access patterns to preserve</h3>
+    <ul>
+      <li><code class="inline">restaurant.service.ts getNearby()</code> &mdash; <code class="inline">$near</code> geo query, filtered by isOpen+isVerified, limit 20.</li>
+      <li><code class="inline">restaurant.service.ts searchRestaurants()</code> &mdash; <code class="inline">$text $search</code> with textScore sort.</li>
+      <li><code class="inline">admin.service.ts</code> &mdash; <code class="inline">Payment.aggregate</code> revenue sum, <code class="inline">Order.aggregate</code> group-by-status counts.</li>
+      <li><code class="inline">.populate()</code> in order/review/cart services (restaurant name+logo, reviewer name+avatar, cart item&rarr;menuItem details).</li>
+      <li><strong>Not currently transactional</strong> (flagged as risk, fixed in Phase 4): <code class="inline">payment.service.ts</code> webhook handler (<code class="inline">Promise.all</code> on Payment+Order updates) and <code class="inline">order.service.ts placeOrder</code> (sequential reads + order create + cart clear).</li>
+    </ul>
+  </div>
+
+  <!-- 3. SCHEMA -->
+  <div class="section" id="schema">
+    <div class="section-number">Section 3</div>
+    <div class="section-title">Target Prisma Schema</div>
+    <div class="section-divider"></div>
+    <p class="section-subtitle">New file: <code class="inline">backend/prisma/schema.prisma</code>, replacing <code class="inline">backend/src/models/*.model.ts</code>. Convention: singular snake_case tables via <code class="inline">@@map</code>, snake_case columns via <code class="inline">@map</code>, UUID primary keys throughout, <code class="inline">Decimal(10,2)</code> for all money fields.</p>
+
+    <pre>generator client {
+  provider        = <span class="st">"prisma-client-js"</span>
+  previewFeatures = [<span class="st">"postgresqlExtensions"</span>]
+}
+
+datasource db {
+  provider   = <span class="st">"postgresql"</span>
+  url        = env(<span class="st">"DATABASE_URL"</span>)
+  extensions = [postgis]
+}
+
+enum UserRole { customer restaurant admin }
+enum OrderStatus { pending confirmed preparing out_for_delivery delivered cancelled }
+enum PaymentStatus { pending paid failed refunded }
+enum PaymentGateway { paytm }</pre>
+
+    <h3 class="sub">User + Address <span class="badge phase">normalizes embedded addresses[]</span></h3>
+    <pre>model User {
+  id                 String    @id @default(uuid()) @db.Uuid
+  name               String
+  email              String    @unique
+  passwordHash       String    @map(<span class="st">"password_hash"</span>)
+  role               UserRole  @default(customer)
+  phone              String?
+  avatar             String?
+  isActive           Boolean   @default(true) @map(<span class="st">"is_active"</span>)
+  mailVerifyLinkSent Boolean   @default(false) @map(<span class="st">"mail_verify_link_sent"</span>)
+  mailVerified       Boolean   @default(false) @map(<span class="st">"mail_verified"</span>)
+  mobileVerified     Boolean   @default(false) @map(<span class="st">"mobile_verified"</span>)
+  mobileOtpHash      String?   @map(<span class="st">"mobile_otp_hash"</span>)
+  mobileOtpExpiresAt DateTime? @map(<span class="st">"mobile_otp_expires_at"</span>)
+  createdAt          DateTime  @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt          DateTime  @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  addresses   Address[]
+  restaurants Restaurant[]
+  carts       Cart[]
+  orders      Order[]
+  payments    Payment[]
+  reviews     Review[]
+
+  @@index([role])
+  @@map(<span class="st">"user"</span>)
+}
+
+model Address {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map(<span class="st">"user_id"</span>) @db.Uuid
+  label     String
+  street    String
+  city      String
+  state     String
+  pincode   String
+  lat       Float    @default(0)
+  lng       Float    @default(0)
+  isDefault Boolean  @default(false) @map(<span class="st">"is_default"</span>)
+  createdAt DateTime @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt DateTime @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map(<span class="st">"address"</span>)
+}</pre>
+
+    <h3 class="sub">Restaurant <span class="badge phase">JSONB opening hours + PostGIS + tsvector</span></h3>
+    <pre>model Restaurant {
+  id              String   @id @default(uuid()) @db.Uuid
+  ownerId         String   @map(<span class="st">"owner_id"</span>) @db.Uuid
+  name            String
+  description     String?
+  cuisineTypes    String[] @map(<span class="st">"cuisine_types"</span>)
+  logo            String?
+  coverImage      String?  @map(<span class="st">"cover_image"</span>)
+  street          String
+  city            String
+  state           String
+  pincode         String
+  location        <span class="ty">Unsupported("geography(Point, 4326)")</span>?
+  searchVector    <span class="ty">Unsupported("tsvector")</span>?                 @map(<span class="st">"search_vector"</span>)
+  rating          Float    @default(0)
+  totalRatings    Int      @default(0) @map(<span class="st">"total_ratings"</span>)
+  isOpen          Boolean  @default(false) @map(<span class="st">"is_open"</span>)
+  openingHours    Json     @default(<span class="st">"{}"</span>) @map(<span class="st">"opening_hours"</span>)
+  deliveryRadius  Int      @default(5) @map(<span class="st">"delivery_radius"</span>)
+  minOrder        Decimal  @default(0) @db.Decimal(10,2) @map(<span class="st">"min_order"</span>)
+  deliveryFee     Decimal  @default(0) @db.Decimal(10,2) @map(<span class="st">"delivery_fee"</span>)
+  avgDeliveryTime Int      @default(30) @map(<span class="st">"avg_delivery_time"</span>)
+  isVerified      Boolean  @default(false) @map(<span class="st">"is_verified"</span>)
+  createdAt       DateTime @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt       DateTime @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  owner     User       @relation(fields: [ownerId], references: [id])
+  menuItems MenuItem[]
+  carts     Cart[]
+  orders    Order[]
+  reviews   Review[]
+
+  @@index([ownerId])
+  @@index([isOpen])
+  @@index([cuisineTypes], type: Gin)
+  @@map(<span class="st">"restaurant"</span>)
+}</pre>
+    <div class="callout warn"><p><code class="inline">location</code> / <code class="inline">searchVector</code> are declared <code class="inline">Unsupported(...)</code> so Prisma's migration diffing won't try to drop them &mdash; they're only ever written via hand-edited raw SQL (Phase 1) and read via <code class="inline">$queryRaw</code> (Phase 3), never through Prisma Client's normal query API.</p></div>
+
+    <h3 class="sub">MenuItem + Customizations <span class="badge phase">normalized 2-level</span></h3>
+    <pre>model MenuItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  restaurantId String   @map(<span class="st">"restaurant_id"</span>) @db.Uuid
+  name         String
+  description  String?
+  price        Decimal  @db.Decimal(10,2)
+  category     String
+  image        String?
+  isVeg        Boolean  @default(false) @map(<span class="st">"is_veg"</span>)
+  isAvailable  Boolean  @default(true) @map(<span class="st">"is_available"</span>)
+  tags         String[]
+  createdAt    DateTime @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt    DateTime @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  restaurant     Restaurant              @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customizations MenuItemCustomization[]
+  cartItems      CartItem[]
+  orderLineItems OrderLineItem[]
+
+  @@index([restaurantId, category])
+  @@index([restaurantId, isAvailable])
+  @@map(<span class="st">"menu_item"</span>)
+}
+
+model MenuItemCustomization {
+  id         String @id @default(uuid()) @db.Uuid
+  menuItemId String @map(<span class="st">"menu_item_id"</span>) @db.Uuid
+  name       String
+  sortOrder  Int    @default(0) @map(<span class="st">"sort_order"</span>)
+
+  menuItem MenuItem                      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  options  MenuItemCustomizationOption[]
+
+  @@index([menuItemId])
+  @@map(<span class="st">"menu_item_customization"</span>)
+}
+
+model MenuItemCustomizationOption {
+  id              String  @id @default(uuid()) @db.Uuid
+  customizationId String  @map(<span class="st">"customization_id"</span>) @db.Uuid
+  label           String
+  extraPrice      Decimal @default(0) @db.Decimal(10,2) @map(<span class="st">"extra_price"</span>)
+
+  customization MenuItemCustomization @relation(fields: [customizationId], references: [id], onDelete: Cascade)
+
+  @@index([customizationId])
+  @@map(<span class="st">"menu_item_customization_option"</span>)
+}</pre>
+
+    <h3 class="sub">Cart + CartItem <span class="badge phase">selections stay JSONB</span></h3>
+    <pre>model Cart {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @unique @map(<span class="st">"user_id"</span>) @db.Uuid
+  restaurantId String   @map(<span class="st">"restaurant_id"</span>) @db.Uuid
+  totalAmount  Decimal  @default(0) @db.Decimal(10,2) @map(<span class="st">"total_amount"</span>)
+  createdAt    DateTime @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt    DateTime @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  items      CartItem[]
+
+  @@index([updatedAt]) <span class="cm">// powers abandoned-cart cleanup job, replaces Mongo TTL index</span>
+  @@map(<span class="st">"cart"</span>)
+}
+
+model CartItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  cartId         String  @map(<span class="st">"cart_id"</span>) @db.Uuid
+  menuItemId     String  @map(<span class="st">"menu_item_id"</span>) @db.Uuid
+  name           String
+  price          Decimal @db.Decimal(10,2)
+  quantity       Int
+  customizations Json    @default(<span class="st">"[]"</span>) <span class="cm">// [{name, option, extraPrice}]</span>
+  subtotal       Decimal @db.Decimal(10,2)
+
+  cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([cartId])
+  @@map(<span class="st">"cart_item"</span>)
+}</pre>
+
+    <h3 class="sub">Order + OrderLineItem + Payment <span class="badge phase">FK direction resolved</span></h3>
+    <pre>model Order {
+  id                String        @id @default(uuid()) @db.Uuid
+  userId            String        @map(<span class="st">"user_id"</span>) @db.Uuid
+  restaurantId      String        @map(<span class="st">"restaurant_id"</span>) @db.Uuid
+  status            OrderStatus   @default(pending)
+  paymentStatus     PaymentStatus @default(pending) @map(<span class="st">"payment_status"</span>)
+  deliveryStreet    String        @map(<span class="st">"delivery_street"</span>)
+  deliveryCity      String        @map(<span class="st">"delivery_city"</span>)
+  deliveryState     String        @map(<span class="st">"delivery_state"</span>)
+  deliveryPincode   String        @map(<span class="st">"delivery_pincode"</span>)
+  deliveryLat       Float         @default(0) @map(<span class="st">"delivery_lat"</span>)
+  deliveryLng       Float         @default(0) @map(<span class="st">"delivery_lng"</span>)
+  subtotal          Decimal       @db.Decimal(10,2)
+  deliveryFee       Decimal       @default(0) @db.Decimal(10,2) @map(<span class="st">"delivery_fee"</span>)
+  taxes             Decimal       @default(0) @db.Decimal(10,2)
+  totalAmount       Decimal       @db.Decimal(10,2) @map(<span class="st">"total_amount"</span>)
+  estimatedDelivery DateTime?     @map(<span class="st">"estimated_delivery"</span>)
+  deliveryAgent     String?       @map(<span class="st">"delivery_agent"</span>)
+  idempotencyKey    String        @unique @map(<span class="st">"idempotency_key"</span>)
+  createdAt         DateTime      @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt         DateTime      @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  user       User            @relation(fields: [userId], references: [id])
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
+  lineItems  OrderLineItem[]
+  payment    Payment?
+  review     Review?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([restaurantId, status])
+  @@index([status])
+  @@map(<span class="st">"order"</span>)
+}
+
+model OrderLineItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  orderId        String  @map(<span class="st">"order_id"</span>) @db.Uuid
+  menuItemId     String  @map(<span class="st">"menu_item_id"</span>) @db.Uuid
+  name           String
+  price          Decimal @db.Decimal(10,2)
+  quantity       Int
+  customizations Json    @default(<span class="st">"[]"</span>)
+  subtotal       Decimal @db.Decimal(10,2)
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@map(<span class="st">"order_line_item"</span>)
+}
+
+model Payment {
+  id               String         @id @default(uuid()) @db.Uuid
+  orderId          String         @unique @map(<span class="st">"order_id"</span>) @db.Uuid
+  userId           String         @map(<span class="st">"user_id"</span>) @db.Uuid
+  amount           Decimal        @db.Decimal(10,2)
+  currency         String         @default(<span class="st">"INR"</span>)
+  gateway          PaymentGateway @default(paytm)
+  gatewayOrderId   String?        @map(<span class="st">"gateway_order_id"</span>)
+  gatewayPaymentId String?        @map(<span class="st">"gateway_payment_id"</span>)
+  checksum         String?
+  status           PaymentStatus  @default(pending)
+  idempotencyKey   String         @unique @map(<span class="st">"idempotency_key"</span>)
+  metadata         Json?
+  createdAt        DateTime       @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt        DateTime       @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  order Order @relation(fields: [orderId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([gatewayPaymentId])
+  @@map(<span class="st">"payment"</span>)
+}</pre>
+    <p><strong>Note:</strong> <code class="inline">Order.paymentId</code> is dropped &mdash; see mapping decision #13.</p>
+
+    <h3 class="sub">Review</h3>
+    <pre>model Review {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map(<span class="st">"user_id"</span>) @db.Uuid
+  restaurantId String   @map(<span class="st">"restaurant_id"</span>) @db.Uuid
+  orderId      String   @unique @map(<span class="st">"order_id"</span>) @db.Uuid
+  rating       Int
+  comment      String?  @db.VarChar(500)
+  images       String[]
+  helpfulCount Int      @default(0) @map(<span class="st">"helpful_count"</span>)
+  createdAt    DateTime @default(now()) @map(<span class="st">"created_at"</span>)
+  updatedAt    DateTime @updatedAt @map(<span class="st">"updated_at"</span>)
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id])
+
+  @@index([restaurantId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map(<span class="st">"review"</span>)
+}</pre>
+  </div>
+
+  <!-- 4. MAPPING DECISIONS -->
+  <div class="section" id="mapping">
+    <div class="section-number">Section 4</div>
+    <div class="section-title">Mapping Decisions</div>
+    <div class="section-divider"></div>
+    <p class="section-subtitle">Every Mongo/Mongoose-specific feature with no direct Postgres equivalent, and the call made for it.</p>
+
+    <table>
+      <thead><tr><th style="width:26px">#</th><th>Mongo feature</th><th>Decision</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>ObjectId PKs</td><td><strong>UUID</strong> everywhere</td><td>No sequential-ID enumeration risk; opaque strings on both sides, no frontend assumptions break.</td></tr>
+        <tr><td>2</td><td>User.addresses[] embedded</td><td>Normalized <code class="inline">address</code> table, FK cascade delete</td><td>Addresses are added/removed individually today &mdash; a real 1:N relation, not a snapshot.</td></tr>
+        <tr><td>3</td><td>Cart.items[] / Order.items[] embedded</td><td>Normalized <code class="inline">cart_item</code> / <code class="inline">order_line_item</code> tables</td><td>Items are mutated one at a time (qty update, remove) &mdash; avoids rewriting a whole array per edit.</td></tr>
+        <tr><td>4</td><td>MenuItem.customizations[].options[] (master data)</td><td>Normalized <code class="inline">menu_item_customization</code> &rarr; <code class="inline">_option</code> tables</td><td>Admin-managed list, edited option-by-option in the future admin UI.</td></tr>
+        <tr><td>5</td><td>CartItem/OrderLineItem customizations (selected option snapshot)</td><td><strong>JSONB</strong></td><td>Immutable per-line snapshot, never queried independently &mdash; distinct from #4's master data.</td></tr>
+        <tr><td>6</td><td>Restaurant.openingHours Map</td><td><strong>JSONB</strong>, not a table</td><td>Fixed 7-key shape, always read/written whole &mdash; a join table would add cost for zero benefit.</td></tr>
+        <tr><td>7</td><td>Payment.metadata (Mixed)</td><td><strong>JSONB</strong></td><td>Direct 1:1 &mdash; untyped by design on both sides.</td></tr>
+        <tr><td>8</td><td>GeoJSON Point + 2dsphere</td><td><code class="inline">geography(Point,4326)</code> + GIST, via <code class="inline">Unsupported(...)</code></td><td>Closest match to Mongo's great-circle <code class="inline">$near</code>; forces access through <code class="inline">$queryRaw</code> since Prisma has no native GIS type.</td></tr>
+        <tr><td>9</td><td>Text index + $text/textScore</td><td>Generated <code class="inline">tsvector</code> column + GIN, queried via <code class="inline">plainto_tsquery</code>/<code class="inline">ts_rank</code></td><td>Same raw-SQL escape-hatch pattern as GIS &mdash; Prisma has no full-text-search API.</td></tr>
+        <tr><td>10</td><td>TTL index (24h abandoned-cart expiry)</td><td>Scheduled <strong>BullMQ repeatable job</strong> running <code class="inline">deleteMany</code></td><td>No Postgres TTL equivalent; reuses BullMQ infra already in the stack instead of a new cron mechanism.</td></tr>
+        <tr><td>11</td><td>Mongoose <code class="inline">select:false</code> fields</td><td>Prisma Client global <strong><code class="inline">omit</code></strong> config, overridden per-query when needed</td><td>Closest 1:1 behavioral match; safer than trusting every call site to remember an explicit select list.</td></tr>
+        <tr><td>12</td><td>pre('save') bcrypt hook + comparePassword()</td><td>Prisma <strong><code class="inline">$extends</code></strong> client extension + plain exported function</td><td>Closest analogue to Mongoose middleware &mdash; no call site can forget to hash. <strong>Must use the same bcrypt cost factor (12)</strong> and the same lookup shape (<code class="inline">findUnique({where:{email}}, {omit:{passwordHash:false}})</code>) as today's <code class="inline">User.findOne({email}).select('+passwordHash')</code>, so seeded-user login behavior is byte-for-byte preserved &mdash; see Section 1b.</td></tr>
+        <tr><td>13</td><td>Order.paymentId &harr; Payment.orderId mutual refs</td><td><strong>Drop</strong> <code class="inline">Order.paymentId</code>; FK lives only on <code class="inline">Payment.orderId</code></td><td>Orders are created before payments exist &mdash; a physical FK on Order would need nullable-then-backfill and a circular insert order.</td></tr>
+        <tr><td>14</td><td>Money as plain Number</td><td><strong><code class="inline">Decimal(10,2)</code></strong></td><td>Floats are unsafe for currency math; exact decimal arithmetic is essentially free in Postgres.</td></tr>
+        <tr><td>15</td><td>Compound index over array field ({cuisineTypes,isOpen})</td><td>Split: <code class="inline">@@index([isOpen])</code> + <code class="inline">@@index([cuisineTypes], type: Gin)</code></td><td>Btree composite doesn't work over array columns; GIN is correct for array-containment (<code class="inline">has</code>/<code class="inline">hasSome</code>) queries.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 5. PHASES -->
+  <div class="section" id="phases">
+    <div class="section-number">Section 5</div>
+    <div class="section-title">Migration Phases</div>
+    <div class="section-divider"></div>
+
+    <h3 class="sub"><span class="badge phase">Phase 0</span> Infra: Postgres + Prisma + PostGIS setup</h3>
+    <ul>
+      <li><code class="inline">docker-compose.yml</code>: replace <code class="inline">mongo:7</code> with <code class="inline">postgis/postgis:16-3.4</code>; env <code class="inline">POSTGRES_USER/PASSWORD/DB</code>; volume <code class="inline">postgres-data</code>; healthcheck <code class="inline">pg_isready</code>. Update backend service's env to set <code class="inline">DATABASE_URL</code>.</li>
+      <li><code class="inline">backend/.env.example</code> / <code class="inline">.env</code>: <code class="inline">MONGODB_URI</code> &rarr; <code class="inline">DATABASE_URL=postgresql://postgres:secret@localhost:5432/magizhthunnu?schema=public</code>.</li>
+      <li><code class="inline">npm install @prisma/client && npm install -D prisma</code> in <code class="inline">backend/</code>.</li>
+      <li><code class="inline">npx prisma init --datasource-provider postgresql</code> &rarr; creates <code class="inline">backend/prisma/schema.prisma</code>.</li>
+      <li>Enable PostGIS via a versioned first migration (recommended) rather than a docker init script, so it travels with the schema.</li>
+    </ul>
+
+    <h3 class="sub"><span class="badge phase">Phase 1</span> Schema + migrations</h3>
+    <ul>
+      <li>Author <code class="inline">schema.prisma</code> per Section 3.</li>
+      <li><code class="inline">npx prisma migrate dev --name init --create-only</code> to generate SQL without applying.</li>
+      <li>Hand-edit the generated migration SQL to add what Prisma can't express: <code class="inline">CREATE EXTENSION IF NOT EXISTS postgis;</code>, the generated <code class="inline">search_vector</code> column expression, <code class="inline">CREATE INDEX ... USING GIST/GIN</code>, and <code class="inline">CHECK</code> constraints (<code class="inline">rating BETWEEN 1 AND 5</code>, <code class="inline">price &gt;= 0</code>, etc).</li>
+      <li>Apply: <code class="inline">npx prisma migrate dev</code>; generate client: <code class="inline">npx prisma generate</code>.</li>
+    </ul>
+
+    <h3 class="sub"><span class="badge phase">Phase 2</span> Rewrite data-access layer per model</h3>
+    <table>
+      <thead><tr><th>File</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">config/db.ts</code></td><td>Replace <code class="inline">mongoose.connect</code> retry loop with a <code class="inline">PrismaClient</code> singleton (global <code class="inline">omit</code> + password-hash <code class="inline">$extends</code> extension) and an equivalent <code class="inline">$connect()</code> retry loop.</td></tr>
+        <tr><td><code class="inline">services/auth.service.ts</code></td><td><code class="inline">findOne/findById/create</code> &rarr; <code class="inline">prisma.user.*</code>; <code class="inline">.select('+passwordHash')</code> &rarr; per-query <code class="inline">omit</code> override; <code class="inline">comparePassword</code> becomes a plain exported function. <code class="inline">loginUser</code> is a <strong>direct behavioral port</strong>: same email-lookup shape, same <code class="inline">bcrypt.compare</code> cost-12 check, same generic <code class="inline">INVALID_CREDENTIALS</code> 401 on both wrong-email and wrong-password (no enumeration leak introduced or removed) &mdash; see Section 1b.</td></tr>
+        <tr><td><code class="inline">controllers/user.controller.ts</code></td><td><code class="inline">addAddress</code>/<code class="inline">removeAddress</code> &rarr; <code class="inline">prisma.address.create/delete</code> instead of array push/filter + parent save.</td></tr>
+        <tr><td><code class="inline">services/restaurant.service.ts</code></td><td><code class="inline">listRestaurants</code> &rarr; <code class="inline">findMany/count</code>; cuisine filter &rarr; <code class="inline">{ has: ... }</code>. <code class="inline">getNearby</code>/<code class="inline">searchRestaurants</code> move to Phase 3.</td></tr>
+        <tr><td><code class="inline">services/cart.service.ts</code></td><td><code class="inline">getCart</code> &rarr; <code class="inline">findUnique({include:...})</code> (replaces populate); item mutations &rarr; explicit <code class="inline">cartItem.create/update/delete</code>.</td></tr>
+        <tr><td><code class="inline">services/order.service.ts</code></td><td><code class="inline">getOrderById</code> &rarr; <code class="inline">findUnique({include:{restaurant:{select:...}}})</code>. <code class="inline">placeOrder</code> moves to Phase 4.</td></tr>
+        <tr><td><code class="inline">services/payment.service.ts</code></td><td><code class="inline">getPaymentStatus</code> &rarr; <code class="inline">findFirst</code>. Webhook handler moves to Phase 4.</td></tr>
+        <tr><td><code class="inline">services/review.service.ts</code></td><td>Rating recompute rewritten with <code class="inline">prisma.review.aggregate({_avg,_count})</code> instead of loading all reviews into JS; moved into Phase 4 transaction.</td></tr>
+        <tr><td><code class="inline">services/admin.service.ts</code></td><td><code class="inline">countDocuments</code> &rarr; <code class="inline">.count()</code>; aggregations &rarr; <code class="inline">prisma.payment.aggregate</code> / <code class="inline">prisma.order.groupBy</code>.</td></tr>
+        <tr><td><code class="inline">models/*.model.ts</code> (all 7)</td><td><strong>Deleted</strong> once every importer above is migrated.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub"><span class="badge phase">Phase 3</span> Geo / full-text / aggregation raw SQL helpers</h3>
+    <p>New helper module (e.g. inline exports in <code class="inline">restaurant.service.ts</code>) using tagged-template <code class="inline">$queryRaw</code> &mdash; never <code class="inline">$queryRawUnsafe</code> with string interpolation:</p>
+    <pre><span class="kw">export const</span> findNearby = (lat, lng, radiusKm) =&gt;
+  prisma.$queryRaw`
+    SELECT id, name, logo, rating,
+           ST_Distance(location, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography) AS distance_m
+    FROM restaurant
+    WHERE ST_DWithin(location, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, ${radiusKm * 1000})
+      AND is_open = true AND is_verified = true
+    ORDER BY distance_m LIMIT 20`;
+
+<span class="kw">export const</span> searchRestaurants = (query) =&gt;
+  prisma.$queryRaw`
+    SELECT id, name, description, rating,
+           ts_rank(search_vector, plainto_tsquery('english', ${query})) AS rank
+    FROM restaurant
+    WHERE search_vector @@ plainto_tsquery('english', ${query}) AND is_verified = true
+    ORDER BY rank DESC LIMIT 20`;</pre>
+    <p>Rows return snake_case and untyped &mdash; add a small mapper to the camelCase DTO shape controllers already expect.</p>
+
+    <h3 class="sub"><span class="badge phase">Phase 4</span> Rewrite transactional flows with <code class="inline">$transaction</code></h3>
+    <table>
+      <thead><tr><th>File / function</th><th>Current risk</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">order.service.ts placeOrder</code></td><td>Sequential reads + create + separate cart clear, no atomicity; idempotency check-then-insert race</td><td><code class="inline">$transaction(async tx =&gt; {...})</code> for create+clear; catch Prisma <code class="inline">P2002</code> on the unique <code class="inline">idempotencyKey</code> as the real race guard &rarr; return 409.</td></tr>
+        <tr><td><code class="inline">payment.service.ts processWebhook</code></td><td><code class="inline">Promise.all</code> on two updates &mdash; not atomic today</td><td><code class="inline">prisma.$transaction([tx.payment.update(...), tx.order.update(...)])</code>.</td></tr>
+        <tr><td><code class="inline">review.service.ts createReview</code></td><td>Read-then-write average computed in JS over all reviews, then separate restaurant update</td><td><code class="inline">$transaction</code>: create review + <code class="inline">aggregate</code> for avg/count + restaurant update.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub"><span class="badge phase">Phase 5</span> Rewrite seed script</h3>
+    <ul>
+      <li><code class="inline">config/seed.ts</code>: swap <code class="inline">connectDB()</code>/<code class="inline">mongoose.disconnect()</code> for <code class="inline">prisma.$connect()</code>/<code class="inline">$disconnect()</code>.</li>
+      <li>Collapse each find-or-create branch into <code class="inline">prisma.user.upsert({where:{email}, update, create})</code>.</li>
+      <li>Restaurant seed similarly &rarr; <code class="inline">upsert</code>; since <code class="inline">location</code> is <code class="inline">Unsupported</code>, set PostGIS coordinates via a follow-up <code class="inline">$executeRaw</code> UPDATE.</li>
+      <li>Add <code class="inline">"prisma":{"seed":"ts-node src/config/seed.ts"}</code> to <code class="inline">package.json</code> so <code class="inline">prisma migrate reset</code> auto-reseeds.</li>
+    </ul>
+
+    <h3 class="sub"><span class="badge phase">Phase 6</span> Update tests</h3>
+    <ul>
+      <li><code class="inline">tests/setup.ts</code>/<code class="inline">teardown.ts</code>: remove <code class="inline">mongodb-memory-server</code>; spin up disposable Postgres via <code class="inline">@testcontainers/postgresql</code>, run <code class="inline">prisma migrate deploy</code> against it programmatically.</li>
+      <li>Update assertions across <code class="inline">auth.service.test.ts</code>, <code class="inline">cart.service.test.ts</code>, <code class="inline">auth.routes.test.ts</code>: <code class="inline">_id</code>&rarr;<code class="inline">id</code>, no <code class="inline">.toObject()</code>, Decimal comparisons via <code class="inline">.toString()</code>/<code class="inline">Number()</code>, UUID-format not ObjectId-format assertions.</li>
+    </ul>
+
+    <h3 class="sub"><span class="badge phase">Phase 7</span> Update docs / CLAUDE.md / env vars</h3>
+    <ul>
+      <li><code class="inline">magizhthunnu/CLAUDE.md</code>: resolve both "MongoDB or postgresSQL" lines to PostgreSQL 16 + PostGIS via Prisma; update Project Structure (<code class="inline">models/</code> &rarr; <code class="inline">prisma/schema.prisma</code>); update Scalability/Security sections (TTL &rarr; BullMQ job, Mongo IP whitelisting &rarr; Postgres firewall rules); update Tables/Collections Overview with new normalized tables.</li>
+      <li><code class="inline">backend/.env.example</code>: <code class="inline">MONGODB_URI</code> &rarr; <code class="inline">DATABASE_URL</code>.</li>
+      <li><code class="inline">docs/system-design.html</code> / <code class="inline">Magizhthunnu_System_Design.pdf</code>: flag as stale (describe the Mongo-era LLD) &mdash; needs a follow-up regeneration, out of scope for the code migration itself.</li>
+    </ul>
+
+    <h3 class="sub"><span class="badge phase">Phase 8</span> Cutover</h3>
+    <ol class="plain">
+      <li><code class="inline">docker-compose up -d postgres redis</code></li>
+      <li><code class="inline">npx prisma migrate deploy</code> against the target environment</li>
+      <li><code class="inline">npm run seed</code></li>
+      <li><strong>Log in as each of the 3 seeded accounts</strong> (<code class="inline">SEED_ADMIN_EMAIL</code> / <code class="inline">SEED_RESTAURANT_EMAIL</code> / <code class="inline">SEED_CUSTOMER_EMAIL</code>, with their configured passwords) and confirm 200 + auth cookies set &mdash; before declaring cutover complete (see Section 1b)</li>
+      <li>Smoke-test every endpoint family: auth (register/login/refresh/OTP), addresses, restaurant nearby+search, cart CRUD, place order, Paytm webhook, review creation + rating recompute, admin analytics</li>
+      <li>Remove the <code class="inline">mongodb</code> service + volume from <code class="inline">docker-compose.yml</code></li>
+      <li>Delete <code class="inline">backend/src/models/*.model.ts</code></li>
+      <li><code class="inline">npm uninstall mongoose mongodb-memory-server</code> and commit the updated lockfile</li>
+    </ol>
+  </div>
+
+  <!-- 6. TOOLING -->
+  <div class="section" id="tooling">
+    <div class="section-number">Section 6</div>
+    <div class="section-title">Package &amp; Tooling Changes</div>
+    <div class="section-divider"></div>
+
+    <h3 class="sub">backend/package.json</h3>
+    <p>
+      <span class="badge add">add</span> <code class="inline">@prisma/client</code>&nbsp;&nbsp;
+      <span class="badge remove">remove</span> <code class="inline">mongoose</code>
+    </p>
+    <p>
+      <span class="badge add">add (dev)</span> <code class="inline">prisma</code>, <code class="inline">@testcontainers/postgresql</code>&nbsp;&nbsp;
+      <span class="badge remove">remove (dev)</span> <code class="inline">mongodb-memory-server</code>
+    </p>
+
+    <h3 class="sub">New/changed npm scripts</h3>
+    <pre>"prisma:generate": "prisma generate",
+"prisma:migrate":  "prisma migrate dev",
+"prisma:deploy":   "prisma migrate deploy",
+"prisma:studio":   "prisma studio",
+"seed":            "ts-node src/config/seed.ts"</pre>
+    <p>Plus a top-level <code class="inline">"prisma": { "seed": "ts-node src/config/seed.ts" }</code> key.</p>
+
+    <h3 class="sub">Environment variable</h3>
+    <table>
+      <thead><tr><th>Old</th><th>New</th></tr></thead>
+      <tbody><tr><td><code class="inline">MONGODB_URI</code></td><td><code class="inline">DATABASE_URL=postgresql://&lt;user&gt;:&lt;pass&gt;@&lt;host&gt;:5432/magizhthunnu?schema=public</code></td></tr></tbody>
+    </table>
+
+    <h3 class="sub">docker-compose.yml</h3>
+    <table>
+      <thead><tr><th>Old</th><th>New</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">mongo:7</code>, port 27017, <code class="inline">mongo-data</code> volume, <code class="inline">mongosh --eval ping</code> healthcheck</td><td><code class="inline">postgis/postgis:16-3.4</code>, port 5432, <code class="inline">postgres-data</code> volume, <code class="inline">pg_isready</code> healthcheck</td></tr>
+        <tr><td><code class="inline">MONGO_USER</code>/<code class="inline">MONGO_PASS</code> env</td><td><code class="inline">POSTGRES_USER</code>/<code class="inline">POSTGRES_PASSWORD</code>/<code class="inline">POSTGRES_DB</code> env</td></tr>
+        <tr><td>backend service's <code class="inline">MONGODB_URI</code></td><td>backend service's <code class="inline">DATABASE_URL</code></td></tr>
+      </tbody>
+    </table>
+    <p>No changes needed to Redis/BullMQ/nginx/frontend services.</p>
+  </div>
+
+  <!-- 7. RISKS -->
+  <div class="section" id="risks">
+    <div class="section-number">Section 7</div>
+    <div class="section-title">Risks &amp; Gotchas</div>
+    <div class="section-divider"></div>
+
+    <div class="risk-grid">
+      <div class="risk-num">1</div><div class="risk-body"><strong>Decimal JSON serialization</strong><span>Prisma.Decimal doesn't serialize to a plain number via JSON.stringify. Decide once, globally, whether the API returns money as strings or numbers.</span></div>
+      <div class="risk-num">2</div><div class="risk-body"><strong>Transaction semantics change</strong><span>Making the two flagged flows atomic is a correctness improvement, but callers now see all-or-nothing failure instead of any partial-success states they may have tolerated before.</span></div>
+      <div class="risk-num">3</div><div class="risk-body"><strong>Loss of Mongoose pre-save hooks</strong><span>The bcrypt-hash hook's $extends replacement is new code needing focused unit tests (hash-on-create, hash-on-update-when-changed, no-op otherwise).</span></div>
+      <div class="risk-num">4</div><div class="risk-body"><strong>select:false &rarr; global omit is client-instance-scoped</strong><span>Any second PrismaClient instance (a one-off script, a stray test helper) not wired through the shared singleton will silently leak passwordHash/OTP fields. Enforce a single exported client.</span></div>
+      <div class="risk-num">5</div><div class="risk-body"><strong>Testing strategy change</strong><span>Testcontainers needs Docker-in-Docker in CI; if unavailable, fall back to a shared compose Postgres + truncate-between-tests, which needs careful isolation.</span></div>
+      <div class="risk-num">6</div><div class="risk-body"><strong>Unsupported(...) columns are Prisma-Client-invisible</strong><span>location/search_vector are maintained entirely via hand-written migration SQL &mdash; a future contributor unfamiliar with this pattern might "fix" it by removing the Unsupported declaration, causing the next migration to drop those columns.</span></div>
+      <div class="risk-num">7</div><div class="risk-body"><strong>Raw SQL bypasses camelCase mapping</strong><span>Geo/full-text helpers return snake_case rows; a forgotten mapping step leaks is_open/created_at-style keys into otherwise camelCase API responses.</span></div>
+      <div class="risk-num">8</div><div class="risk-body"><strong>Idempotency-key race in placeOrder</strong><span>Even inside a $transaction, findUnique-then-create isn't fully race-safe under READ COMMITTED. Rely on the unique constraint + catch P2002, not the pre-check.</span></div>
+      <div class="risk-num">9</div><div class="risk-body"><strong>Hand-written CHECK constraints invisible to schema.prisma</strong><span>rating BETWEEN 1 AND 5 etc. are added by hand-editing migration SQL &mdash; document clearly so a future auto-generated migration doesn't silently drop them.</span></div>
+      <div class="risk-num">10</div><div class="risk-body"><strong>Stale existing docs</strong><span>docs/system-design.html and Magizhthunnu_System_Design.pdf describe the Mongo-era LLD and will mislead readers until regenerated (out of scope here).</span></div>
+      <div class="risk-num">11</div><div class="risk-body"><strong>Email lookup is case-sensitive on read, not just on write</strong><span>Mongoose's lowercase:true only normalizes email on save; login/register both query with the raw, unnormalized input email. Pre-existing in the current Mongo app, not introduced by this migration &mdash; carries over unchanged. Doesn't affect the 3 seed accounts (already lowercase), but a future mixed-case login report shouldn't be blamed on the DB migration. See Section 1b.</span></div>
+    </div>
+  </div>
+
+  <!-- 8. FILES -->
+  <div class="section" id="files">
+    <div class="section-number">Section 8</div>
+    <div class="section-title">Critical Files for Implementation</div>
+    <div class="section-divider"></div>
+    <ul>
+      <li><code class="inline">backend/prisma/schema.prisma</code> <span style="color:var(--gray-600)">&mdash; new, the entire target data model</span></li>
+      <li><code class="inline">backend/src/config/db.ts</code> <span style="color:var(--gray-600)">&mdash; Prisma client singleton, omit config, password-hash extension</span></li>
+      <li><code class="inline">backend/src/services/order.service.ts</code> <span style="color:var(--gray-600)">&mdash; transactional placeOrder rewrite</span></li>
+      <li><code class="inline">backend/src/services/payment.service.ts</code> <span style="color:var(--gray-600)">&mdash; transactional webhook rewrite</span></li>
+      <li><code class="inline">backend/src/services/restaurant.service.ts</code> <span style="color:var(--gray-600)">&mdash; raw SQL geo/full-text helpers</span></li>
+      <li><code class="inline">backend/src/config/seed.ts</code> <span style="color:var(--gray-600)">&mdash; upsert-based reseed, PostGIS raw-SQL follow-up write</span></li>
+      <li><code class="inline">docker-compose.yml</code> <span style="color:var(--gray-600)">&mdash; Postgres/PostGIS service swap</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<footer>Magizhthunnu &middot; MongoDB &rarr; PostgreSQL Migration Plan &middot; Documentation only, no code changed</footer>
+
+</body>
+</html>
