@@ -6,7 +6,8 @@ export const validate =
   (schema: ZodSchema) =>
   (req: Request, _res: Response, next: NextFunction): void => {
     try {
-      schema.parse({ body: req.body, query: req.query, params: req.params });
+      const body: unknown = req.body;
+      schema.parse({ body, query: req.query, params: req.params });
       next();
     } catch (err) {
       if (err instanceof ZodError) {

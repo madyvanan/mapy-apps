@@ -13,6 +13,7 @@ export const emailQueue = new Queue('email', { connection, defaultJobOptions });
 new Worker(
   'email',
   async (job) => {
+    await Promise.resolve();
     logger.info(`Processing email job: ${job.name}`, job.data);
     // TODO: integrate SMTP / SendGrid here
   },
