@@ -9,10 +9,8 @@ export const getUsers = asyncHandler(async (req: AuthenticatedRequest, res: Resp
 });
 
 export const updateUserStatus = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const user = await adminService.updateUserStatus(
-    req.params['userId'] as string,
-    req.body.isActive as boolean,
-  );
+  const { isActive } = req.body as { isActive: boolean };
+  const user = await adminService.updateUserStatus(req.params['userId'], isActive);
   res.json({ success: true, data: { user } });
 });
 
@@ -22,10 +20,8 @@ export const getRestaurants = asyncHandler(async (req: AuthenticatedRequest, res
 });
 
 export const approveRestaurant = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const restaurant = await adminService.approveRestaurant(
-    req.params['restaurantId'] as string,
-    req.body.verified as boolean,
-  );
+  const { verified } = req.body as { verified: boolean };
+  const restaurant = await adminService.approveRestaurant(req.params['restaurantId'], verified);
   res.json({ success: true, data: { restaurant } });
 });
 

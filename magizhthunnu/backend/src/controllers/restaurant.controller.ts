@@ -30,8 +30,8 @@ export const search = asyncHandler(async (req: Request, res: Response): Promise<
 
 export const getById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const [restaurant, menu] = await Promise.all([
-    restaurantService.getRestaurantById(req.params['id']!),
-    restaurantService.getMenuByRestaurant(req.params['id']!),
+    restaurantService.getRestaurantById(req.params['id']),
+    restaurantService.getMenuByRestaurant(req.params['id']),
   ]);
   res.json({ success: true, data: { restaurant, menu } });
 });
@@ -42,11 +42,11 @@ export const create = asyncHandler(async (req: AuthenticatedRequest, res: Respon
 });
 
 export const update = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const restaurant = await restaurantService.updateRestaurant(req.params['id']!, req.user.id, req.body as never);
+  const restaurant = await restaurantService.updateRestaurant(req.params['id'], req.user.id, req.body as never);
   res.json({ success: true, data: restaurant });
 });
 
 export const toggle = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const restaurant = await restaurantService.toggleOpen(req.params['id']!, req.user.id);
+  const restaurant = await restaurantService.toggleOpen(req.params['id'], req.user.id);
   res.json({ success: true, data: { isOpen: restaurant.isOpen } });
 });

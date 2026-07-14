@@ -124,7 +124,7 @@ export const getMenuByRestaurant = async (restaurantId: string): Promise<Record<
   const grouped = items.reduce<Record<string, MenuItem[]>>((acc, item) => {
     const cat = item.category;
     if (!acc[cat]) acc[cat] = [];
-    acc[cat]!.push(item);
+    acc[cat].push(item);
     return acc;
   }, {});
 
